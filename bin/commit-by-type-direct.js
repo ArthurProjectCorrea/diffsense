@@ -2,7 +2,7 @@
 
 /**
  * Script para agrupar e commitar alterações por tipo no DiffSense
- * Versão simplificada que usa comandos de terminal diretamente
+ * Versão com interface melhorada para terminal
  */
 
 import { exec } from 'child_process';
@@ -26,19 +26,37 @@ function question(query) {
 }
 
 /**
- * Executa um comando git e retorna a saída
+ * Executa um comando git silenciosamente e retorna a saída
  */
-async function runCommand(command) {
+async function runCommand(command, silent = true) {
   try {
-    console.log(`> Executando: ${command}`);
+    if (!silent) {
+      console.log(`> ${command}`);
+    }
     const { stdout, stderr } = await execAsync(command);
-    if (stderr && !stderr.includes('warning:')) {
-      console.error(`Erro: ${stderr}`);
+    if (stderr && !stderr.includes('warning:') && !silent) {
+      console.error(`⚠️ ${stderr}`);
     }
     return stdout.trim();
   } catch (error) {
-    console.error(`Erro ao executar comando: ${error.message}`);
+    if (!silent) {
+      console.error(`❌ Erro: ${error.message}`);
+    }
     return '';
+  }
+}
+
+/**
+ * Mostra uma barra de progresso no terminal
+ */
+function showProgress(message, percent) {
+  const width = 30;
+  const completed = Math.floor(width * (percent / 100));
+  const remaining = width - completed;
+  const bar = '█'.repeat(completed) + '░'.repeat(remaining);
+  process.stdout.write(`\r${message} [${bar}] ${percent}%`);
+  if (percent === 100) {
+    process.stdout.write('\n');
   }
 }
 
@@ -47,28 +65,41 @@ async function runCommand(command) {
  */
 async function commitByType() {
   try {
+    console.log('\n🔍 DiffSense - Commit por Tipo\n');
+    console.log('Analisando repositório...');
+    
+    // Mostrar barra de progresso enquanto detecta arquivos
+    showProgress('Procurando alterações', 30);
+    
     // Obter arquivos modificados
     const modifiedFiles = await runCommand('git ls-files -m');
     
+    showProgress('Procurando alterações', 60);
+    
     // Obter arquivos não rastreados
     const untrackedFiles = await runCommand('git ls-files --others --exclude-standard');
+    
+    showProgress('Procurando alterações', 100);
     
     // Combinar todas as alterações
     const allChanges = [...modifiedFiles.split('\n'), ...untrackedFiles.split('\n')];
     const files = allChanges.filter(Boolean);
     
     if (files.length === 0) {
-      console.log('Não há alterações para commitar.');
+      console.log('\n✨ Repositório limpo! Não há alterações para commitar.');
       rl.close();
       return;
     }
     
-    console.log(`\n🔍 Encontradas ${files.length} alterações no diretório de trabalho.\n`);
+    console.log(`\n✅ Encontradas ${files.length} alterações no repositório.`);
     
     // Classificar arquivos por tipo
     const fileTypes = {};
+    let processedFiles = 0;
     
-    console.log('\n📁 Classificando arquivos por tipo...');
+    // Iniciar barra de progresso para classificação
+    showProgress('Classificando alterações', 0);
+    
     for (const filePath of files) {
       const ext = path.extname(filePath).toLowerCase();
       const fileName = path.basename(filePath).toLowerCase();
@@ -99,101 +130,106 @@ async function commitByType() {
         fileTypes[type] = [];
       }
       fileTypes[type].push(filePath);
+      
+      // Atualizar barra de progresso
+      processedFiles++;
+      showProgress('Classificando alterações', Math.floor((processedFiles / files.length) * 100));
     }
     
-    // Exibir os arquivos agrupados por tipo
-    console.log('\n📊 Alterações agrupadas por tipo:');
+    // Resumo conciso das alterações
+    console.log('\n📊 Alterações classificadas por tipo:');
     const types = Object.keys(fileTypes);
-    types.forEach(type => {
-      console.log(`- ${type}: ${fileTypes[type].length} arquivos`);
-      if (fileTypes[type].length <= 5) {
-        // Mostrar arquivos se forem poucos
-        console.log(`  ${fileTypes[type].map(f => path.basename(f)).join(', ')}`);
-      } else {
-        // Mostrar apenas os primeiros 3 se houver muitos
-        console.log(`  ${fileTypes[type].slice(0, 3).map(f => path.basename(f)).join(', ')}... (e outros ${fileTypes[type].length - 3} arquivos)`);
-      }
-    });
+    const typeStats = types.map(type => `${type}: ${fileTypes[type].length}`).join(', ');
+    console.log(`   ${typeStats}`);
     
-    // Verificar se usuário quer committar por tipo
-    const commitByTypeAnswer = await question('Deseja commitar alterações separadas por tipo? (S/n): ');
-    const commitByTypeConfirmed = !commitByTypeAnswer || commitByTypeAnswer.toLowerCase() === 's';
-    
-    if (!commitByTypeConfirmed) {
-      const commitMsg = await question('Digite a mensagem para um único commit: ');
-      if (commitMsg) {
-        await runCommand(`git add .`);
-        await runCommand(`git commit -m "${commitMsg}"`);
-        console.log('\n✅ Commit único realizado com sucesso!');
-      } else {
-        console.log('\n❌ Commit cancelado - mensagem vazia.');
-      }
-      
-      rl.close();
-      return;
+    // Mostrar detalhes apenas se houver poucos tipos
+    if (types.length <= 3) {
+      types.forEach(type => {
+        const fileCount = fileTypes[type].length;
+        if (fileCount <= 3) {
+          console.log(`   • ${type} (${fileCount}): ${fileTypes[type].map(f => path.basename(f)).join(', ')}`);
+        } else {
+          console.log(`   • ${type} (${fileCount}): ${fileTypes[type].slice(0, 2).map(f => path.basename(f)).join(', ')}... e outros ${fileCount - 2}`);
+        }
+      });
     }
     
-    // Processo para commitar por tipo
-    console.log('\n🔄 Iniciando commits por tipo...\n');
+    // Verificar se o usuário deseja fazer os commits
+    const confirmCommit = await question('\nDeseja fazer o commit das alterações? (S/n): ');
     
-    // Para cada tipo, oferecer commit
-    for (const type of types) {
-      const files = fileTypes[type] || [];
+    if (!confirmCommit || confirmCommit.toLowerCase() === 's') {
+      console.log('\n🚀 Iniciando processo de commits...');
       
-      console.log(`\n📁 Tipo: ${type.toUpperCase()} (${files.length} arquivos)`);
-      
-      if (files.length === 0) {
-        console.log(`⚠️ Nenhum arquivo encontrado para o tipo "${type}". Pulando.`);
-        continue;
+      // Preparar mensagens de commit para cada tipo
+      const commitMessages = {};
+      for (const type of types) {
+        const suggestedMessage = `${type}: alterações em arquivos de ${type}`;
+        commitMessages[type] = suggestedMessage;
       }
       
-      console.log(`Arquivos: ${files.map(f => path.basename(f)).join(', ')}`);
+      // Realizar commits por tipo, um após o outro
+      let commitCount = 0;
       
-      // Sugerir mensagem de commit
-      const suggestedMessage = `${type}: alterações em arquivos de ${type}`;
-      console.log(`\nMensagem sugerida: ${suggestedMessage}`);
-      
-      const confirmCommit = await question(`Realizar commit para alterações de tipo "${type}"? (S/n): `);
-      
-      if (!confirmCommit || confirmCommit.toLowerCase() === 's') {
-        // Confirmar ou editar a mensagem
-        const commitMessage = await question(`Editar mensagem ou pressionar ENTER para usar sugerida: `);
-        const finalMessage = commitMessage || suggestedMessage;
+      for (const type of types) {
+        const files = fileTypes[type] || [];
         
-        // Limpar staging area
-        await runCommand('git reset');
+        if (files.length === 0) continue;
         
-        // Adicionar apenas os arquivos deste tipo
-        for (const file of files) {
-          await runCommand(`git add "${file}"`);
+        const message = commitMessages[type];
+        const totalCommits = types.filter(t => fileTypes[t].length > 0).length;
+        
+        // Mostrar progresso
+        commitCount++;
+        showProgress(`Processando commits (${commitCount}/${totalCommits})`, 
+                     Math.floor((commitCount / totalCommits) * 100));
+        
+        console.log(`\n\n📦 Commit ${commitCount}/${totalCommits}: ${type.toUpperCase()} (${files.length} arquivos)`);
+        console.log(`   Mensagem: "${message}"`);
+        
+        try {
+          // Limpar staging area
+          await runCommand('git reset', true);
+          
+          // Adicionar arquivos e fazer o commit em um único passo
+          let addedFiles = 0;
+          for (const file of files) {
+            try {
+              await runCommand(`git add "${file}"`, true);
+              addedFiles++;
+            } catch (e) {
+              // Ignorar erros de arquivos individuais
+            }
+          }
+          
+          if (addedFiles === 0) {
+            console.log('   ⚠️ Nenhum arquivo adicionado, pulando commit.');
+            continue;
+          }
+          
+          // Fazer o commit
+          await runCommand(`git commit -m "${message}"`, false);
+          console.log(`   ✅ Commit realizado com sucesso!`);
+        } catch (error) {
+          console.log(`   ❌ Erro ao realizar commit: ${error.message}`);
         }
-        
-        // Verificar quais arquivos foram adicionados
-        const stagedFiles = await runCommand('git diff --name-only --cached');
-        const stagedCount = stagedFiles.split('\n').filter(Boolean).length;
-        console.log(`Arquivos preparados: ${stagedCount}`);
-        
-        if (stagedCount === 0) {
-          console.log(`⚠️ Nenhum arquivo foi adicionado para o tipo "${type}". Pulando commit.`);
-          continue;
-        }
-        
-        // Realizar o commit
-        await runCommand(`git commit -m "${finalMessage}"`);
-        console.log(`✅ Commit de "${type}" realizado com sucesso!`);
-      } else {
-        console.log(`⏩ Commit de "${type}" pulado.`);
       }
+      
+      console.log('\n✨ Processo de commits concluído com sucesso!');
+    } else {
+      console.log('\n❌ Operação cancelada pelo usuário.');
     }
-    
-    console.log('\n🎉 Processo de commits por tipo concluído!');
-    
+    console.log('\n👋 Obrigado por usar o DiffSense Commit por Tipo!');
     rl.close();
   } catch (error) {
-    console.error('Erro durante o processo:', error);
+    console.error('\n❌ Erro durante o processo:', error);
     rl.close();
   }
 }
+
+// Exibir cabeçalho
+console.log('\n╭───────────────────────────────────────╮');
+console.log('│       DiffSense - Commit por Tipo      │');
+console.log('╰───────────────────────────────────────╯');
 
 // Executar a função principal
 commitByType();
