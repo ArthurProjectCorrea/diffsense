@@ -129,7 +129,29 @@ npm run build
 
 # Executar testes
 npm test
+
+# Analisar arquivos não commitados
+npm run analyze
+
+# Commitar alterações agrupadas por tipo (feat, fix, docs, etc.)
+npm run commit
 ```
+
+## Recursos Adicionais
+
+### Commit por Tipo
+
+DiffSense oferece a funcionalidade de agrupar e commitar alterações por seu tipo semântico:
+
+```bash
+# Usando o script com integração completa ao DiffSense
+npm run commit-by-type
+
+# Usando a versão direta (mais rápida)
+npm run commit
+```
+
+Este recurso analisa as alterações não commitadas, as classifica em categorias como `feat`, `fix`, `docs`, `test` e `chore`, e permite realizar commits separados para cada categoria, mantendo um histórico de commits mais limpo e semântico.
 
 ## Requisitos
 
