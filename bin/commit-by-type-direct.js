@@ -47,9 +47,18 @@ async function runCommand(command) {
  */
 async function commitByType() {
   try {
-    // Verificar status do git
-    const statusOutput = await runCommand('git status --porcelain');
-    const files = statusOutput.split('\n').filter(Boolean).map(line => line.substring(3));
+    // Usar git ls-files para garantir nomes corretos dos arquivos
+    const lsFilesOutput = await runCommand('git ls-files -m');
+    console.log('Arquivos modificados (git ls-files -m):');
+    console.log(lsFilesOutput);
+    
+    // Processar a saída do git ls-files
+    const files = lsFilesOutput.split('\n')
+      .filter(Boolean)
+      .map(line => {
+        console.log(`Arquivo detectado: '${line}'`);
+        return line;
+      });
     
     if (files.length === 0) {
       console.log('Não há alterações para commitar.');
