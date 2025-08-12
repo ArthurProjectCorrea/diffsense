@@ -8,13 +8,15 @@
   "bin": {
     "diffsense": "bin/diffsense.js",
     "diffsense-analyze-working-dir": "bin/analyze-working-dir.js",
-    "diffsense-commit-by-type": "bin/commit-by-type.js"
+    "diffsense-commit-by-type": "bin/commit-by-type.js",
+    "diffsense-commit": "bin/commit-by-type-direct.js"
   },
   "scripts": {
     "build": "tsc",
     "start": "node bin/diffsense.js",
     "analyze": "node bin/analyze-working-dir.js",
     "commit-by-type": "node bin/commit-by-type.js",
+    "commit": "node bin/commit-by-type-direct.js",
     "dev": "ts-node --esm src/cli/index.ts run",
     "test": "vitest",
     "prepare": "npm run build"
