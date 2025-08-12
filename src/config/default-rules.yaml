@@ -1,0 +1,15 @@
+- id: tests
+  match: "**/*.spec.ts"
+  type: test
+  reason: "Arquivo de teste"
+- id: public-api-remove
+  match_ast: "exported.interface.* removedProperty"
+  type: breaking
+  reason: "Remoção de propriedade pública"
+- id: dto-change
+  match_path: "src/api/contracts/**"
+  heuristics:
+    - if: "semantic.delta.containsDtoPropertyRemoved"
+      set: breaking
+    - if: "semantic.delta.containsDtoAddedOptional"
+      set: feat

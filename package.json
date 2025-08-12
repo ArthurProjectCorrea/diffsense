@@ -1,0 +1,59 @@
+{
+  "name": "diffsense",
+  "version": "0.1.0",
+  "description": "Framework inteligente para análise de alterações em código e commits semânticos automáticos.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "diffsense": "bin/diffsense.js",
+    "diffsense-analyze-working-dir": "bin/analyze-working-dir.js",
+    "diffsense-commit-by-type": "bin/commit-by-type.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node bin/diffsense.js",
+    "analyze": "node bin/analyze-working-dir.js",
+    "commit-by-type": "node bin/commit-by-type.js",
+    "dev": "ts-node --esm src/cli/index.ts run",
+    "test": "vitest",
+    "prepare": "npm run build"
+  },
+  "files": [
+    "dist/",
+    "bin/",
+    "src/config/default-rules.yaml"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArthurProjectCorrea/diffsense.git"
+  },
+  "keywords": [
+    "git",
+    "diff",
+    "commit",
+    "semantic-commit",
+    "analysis",
+    "typescript"
+  ],
+  "author": "Arthur Correa",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/minimatch": "^5.1.2",
+    "@types/node": "^20.10.5",
+    "typescript": "^5.6.3",
+    "ts-node": "^10.9.1",
+    "vitest": "^1.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "minimatch": "^9.0.3",
+    "simple-git": "^3.21.0",
+    "ts-morph": "^21.0.1",
+    "yaml": "^2.3.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
