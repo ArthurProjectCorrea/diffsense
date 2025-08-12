@@ -151,7 +151,20 @@ npm run commit-by-type
 npm run commit
 ```
 
-Este recurso analisa as alterações não commitadas, as classifica em categorias como `feat`, `fix`, `docs`, `test` e `chore`, e permite realizar commits separados para cada categoria, mantendo um histórico de commits mais limpo e semântico.
+Este recurso:
+
+1. Analisa as alterações não commitadas
+2. Classifica os arquivos por tipo semântico:
+   - `feat`: Novas funcionalidades e implementações
+   - `fix`: Correções de bugs e problemas
+   - `docs`: Documentação e comentários
+   - `test`: Testes unitários e de integração
+   - `chore`: Configurações, dependências e arquivos de suporte
+   - `style`: Arquivos de estilo (CSS, SCSS)
+3. Permite que você revise e edite as mensagens de commit para cada tipo
+4. Realiza commits separados para cada categoria
+
+Isso mantém um histórico de commits mais limpo, semântico e organizado, facilitando a revisão de código e a geração de changelogs.
 
 ## Requisitos
 
