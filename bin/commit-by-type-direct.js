@@ -47,18 +47,15 @@ async function runCommand(command) {
  */
 async function commitByType() {
   try {
-    // Usar git ls-files para garantir nomes corretos dos arquivos
-    const lsFilesOutput = await runCommand('git ls-files -m');
-    console.log('Arquivos modificados (git ls-files -m):');
-    console.log(lsFilesOutput);
+    // Obter arquivos modificados
+    const modifiedFiles = await runCommand('git ls-files -m');
     
-    // Processar a saída do git ls-files
-    const files = lsFilesOutput.split('\n')
-      .filter(Boolean)
-      .map(line => {
-        console.log(`Arquivo detectado: '${line}'`);
-        return line;
-      });
+    // Obter arquivos não rastreados
+    const untrackedFiles = await runCommand('git ls-files --others --exclude-standard');
+    
+    // Combinar todas as alterações
+    const allChanges = [...modifiedFiles.split('\n'), ...untrackedFiles.split('\n')];
+    const files = allChanges.filter(Boolean);
     
     if (files.length === 0) {
       console.log('Não há alterações para commitar.');
@@ -112,6 +109,9 @@ async function commitByType() {
       if (fileTypes[type].length <= 5) {
         // Mostrar arquivos se forem poucos
         console.log(`  ${fileTypes[type].map(f => path.basename(f)).join(', ')}`);
+      } else {
+        // Mostrar apenas os primeiros 3 se houver muitos
+        console.log(`  ${fileTypes[type].slice(0, 3).map(f => path.basename(f)).join(', ')}... (e outros ${fileTypes[type].length - 3} arquivos)`);
       }
     });
     
