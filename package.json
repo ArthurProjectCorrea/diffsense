@@ -19,6 +19,7 @@
     "// === Comandos de Commit ===": "",
     "commit": "node bin/diffsense.js commit --simple",
     "commit:smart": "node bin/commit-by-type-new.js",
+    "commit:smart:v2": "node bin/commit-by-type-improved.js",
     "commit:suggest": "node bin/diffsense.js suggest",
     
     "// === Comandos de Desenvolvimento ===": "",
