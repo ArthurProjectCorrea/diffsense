@@ -16,12 +16,12 @@ import {
 import path from 'path';
 
 /**
- * Executa a análise completa do DiffSense de acordo com a arquitetura de referência
+ * Executes complete DiffSense analysis according to the reference architecture
  * 
- * @param base - Branch ou commit base para comparação
- * @param head - Branch ou commit head para comparação (geralmente o estado atual)
- * @param options - Opções adicionais para personalizar a análise
- * @returns Objeto com resultado da análise e relatório
+ * @param base - Base branch or commit for comparison
+ * @param head - Head branch or commit for comparison (usually the current state)
+ * @param options - Additional options to customize the analysis
+ * @returns Object with analysis result and report
  */
 export async function runAnalysis(
   base: string, 
@@ -31,16 +31,16 @@ export async function runAnalysis(
   console.log(`Running DiffSense analysis from ${base} to ${head}...`);
 
   try {
-    // 1. Detecta as mudanças entre os commits/branches
+    // 1. Detects changes between commits/branches
     const changeDetector = new ChangeDetector();
     const changes = await changeDetector.detectChanges(base, head);
-    console.log(`Detectadas ${changes.length} mudanças`);
+    console.log(`Detected ${changes.length} changes`);
 
-    // 2. Correlaciona o contexto das mudanças
+    // 2. Correlates the context of changes
     const contextCorrelator = new ContextCorrelator();
     const contextualizedChanges = await contextCorrelator.correlateChanges(changes);
     
-    // 3. Analisa semanticamente as mudanças
+    // 3. Semantically analyzes the changes
     const config = {
       baseDir: process.cwd(),
       outDir: './reports',
@@ -63,10 +63,10 @@ export async function runAnalysis(
     
     const analyzedChanges = await semanticAnalyzer.analyzeChanges(fileChanges as any);
     
-    // 4. Aplica regras de classificação
+    // 4. Apply classification rules
     const rulesEngine = new RulesEngine(options.configPath);
     
-    // Converter ISemanticAnalysis[] para SemanticChange[]
+    // Convert ISemanticAnalysis[] to SemanticChange[]
     const semanticChanges: SemanticChange[] = analyzedChanges.map(analysis => {
       // Mapear o resultado do novo SemanticAnalyzer para o formato esperado pelo sistema legado
       const baseChange = contextualizedChanges.find(c => c.filePath === analysis.file) || 
@@ -87,18 +87,18 @@ export async function runAnalysis(
       const fileExt = path.extname(analysis.file).toLowerCase();
       const fileName = path.basename(analysis.file).toLowerCase();
       
-      // Detectar arquivos de teste
+      // Detect test files
       if (analysis.file.includes('/test') || analysis.file.includes('/__test__') || 
           fileName.includes('test') || fileName.includes('spec') || 
           analysis.file.includes('/tests/')) {
         commitType = 'test';
       } 
-      // Detectar arquivos de documentação
+      // Detect documentation files
       else if (fileExt === '.md' || fileExt === '.txt' || fileName.includes('readme') || 
                fileName.includes('license') || fileName.includes('changelog')) {
         commitType = 'docs';
       }
-      // Detectar arquivos de configuração
+      // Detect configuration files
       else if (fileExt === '.json' || fileExt === '.yaml' || fileExt === '.yml' || 
                fileExt === '.toml' || fileExt === '.ini' || fileName.startsWith('.')) {
         commitType = 'chore';
@@ -166,10 +166,10 @@ export async function runAnalysis(
 }
 
 /**
- * Gera uma sugestão de commit com base nas mudanças analisadas
+ * Generates a commit suggestion based on analyzed changes
  */
 function generateCommitSuggestion(changes: ScoredChange[]) {
-  // Se não houver mudanças, retornar undefined
+  // If there are no changes, return undefined
   if (changes.length === 0) {
     return undefined;
   }
@@ -232,7 +232,7 @@ function generateCommitSuggestion(changes: ScoredChange[]) {
     const breakingChanges = changes.filter(change => change.breaking);
     body = 'BREAKING CHANGE: ' + 
       breakingChanges.map(change => change.description || 
-                           `Alteração incompatível em ${change.filePath}`).join('\n');
+                           `Incompatible change in ${change.filePath}`).join('\n');
   }
   
   return {
