@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { Reporter } from '../../src/core/reporter';
 import { ScoredChange, ChangeType, CommitType } from '../../src/types';
 

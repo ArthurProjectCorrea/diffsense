@@ -1,4 +1,4 @@
-import { descri    reason: "Fix in JavaScript file"e, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RulesEngine } from '../../src/core/rules-engine';
 import { SemanticChange, ChangeType, SemanticChangeType } from '../../src/types';
 

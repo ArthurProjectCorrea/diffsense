@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { runAnalysis } from '../../src/index';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { runAnalysis } from "../../src";
 
 // Mock for simple-git module
 vi.mock('simple-git', () => {
@@ -25,7 +26,7 @@ vi.mock('ts-morph', () => {
     Project: vi.fn().mockImplementation(() => ({
       getSourceFiles: vi.fn().mockReturnValue([]),
       removeSourceFile: vi.fn(),
-      createSourceFile: vi.fn().mockImplementation((path, content) => {
+      createSourceFile: vi.fn().mockImplementation((_path, _content) => {
         return {
           getClasses: vi.fn().mockReturnValue([]),
           getInterfaces: vi.fn().mockReturnValue([]),
