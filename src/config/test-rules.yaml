@@ -1,24 +1,27 @@
-- id: feat-new-file
+# Essential types only
+- id: new-feature
   match: "src/**/*.{ts,tsx}"
   type: feat
   reason: "New feature implementation"
   
-- id: fix-implementation
+- id: bug-fix
   match_ast: "implementation_changed"
   type: fix
   reason: "Bug fix or implementation change"
   
-- id: docs
+- id: documentation
   match: "**/*.{md,txt,doc,docx}"
   type: docs
   reason: "Documentation change"
   
-- id: test
+- id: test-file
   match: "**/*.{spec,test}.{ts,tsx,js,jsx}"
   type: test
   reason: "Test file changes"
   
-- id: refactor
+- id: code-refactor
   match_ast: "rename_symbol || move_declaration || extract_function"
   type: refactor
   reason: "Code refactoring"
+  
+# Breaking changes are detected by severity in rules-engine.ts

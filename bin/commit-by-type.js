@@ -43,10 +43,19 @@ async function execGitCommand(command) {
 }
 
 /**
- * Agrupa as alterações por tipo (feat, fix, docs, etc.)
+ * Agrupa as alterações por tipo (feat, fix, docs, refactor, test)
  */
 function groupChangesByType(changes) {
   const groupedChanges = {};
+  
+  // Mapeamento de tipos antigos para os essenciais
+  const typeMapping = {
+    'chore': 'refactor',
+    'style': 'refactor',
+    'perf': 'refactor',
+    'build': 'refactor',
+    'ci': 'refactor'
+  };
   
   changes.forEach(change => {
     // Ignorar alterações sem arquivo

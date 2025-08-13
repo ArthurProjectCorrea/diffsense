@@ -1,0 +1,152 @@
+name: Repository Maintenance
+
+on:
+  schedule:
+    - cron: '0 5 * * 1'  # Segunda-feira às 5:00
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Maintenance task to run'
+        required: true
+        type: choice
+        options:
+          - dependencies
+          - stale
+          - wiki
+
+jobs:
+  update-dependencies:
+    name: Update Dependencies
+    if: github.event.inputs.task == 'dependencies' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build DiffSense
+        run: npm run build
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "DiffSense Maintenance Bot"
+          git config --global user.email "maintenance-bot@diffsense.com"
+
+      - name: Check and update dependencies
+        run: |
+          # Verificar atualizações
+          HAS_UPDATES=false
+          
+          # Verificar atualizações de segurança
+          if npm audit fix --package-lock-only; then
+            HAS_UPDATES=true
+          fi
+          
+          # Verificar outras atualizações
+          if npm update --package-lock-only; then
+            HAS_UPDATES=true
+          fi
+          
+          # Se houver atualizações, instalar e testar
+          if [ "$HAS_UPDATES" = true ]; then
+            npm install
+            npm test
+            
+            # Criar commit semântico
+            npm run workflow-commit -- \
+              --prefix chore \
+              --scope deps \
+              --push \
+              --message "Update dependencies [automated]"
+          fi
+
+  clean-stale:
+    name: Clean Stale Issues/PRs
+    if: github.event.inputs.task == 'stale' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v8
+        with:
+          stale-issue-message: 'Esta issue está marcada como stale por falta de atividade. Será fechada em 7 dias se não houver atividade.'
+          stale-pr-message: 'Este PR está marcado como stale por falta de atividade. Será fechado em 7 dias se não houver atividade.'
+          close-issue-message: 'Esta issue foi fechada automaticamente por falta de atividade.'
+          close-pr-message: 'Este PR foi fechado automaticamente por falta de atividade.'
+          days-before-stale: 60
+          days-before-close: 7
+          exempt-issue-labels: 'pinned,security'
+          exempt-pr-labels: 'pinned,dependencies'
+
+  sync-wiki:
+    name: Synchronize Wiki
+    if: github.event.inputs.task == 'wiki' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          path: source
+
+      - uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: source/package-lock.json
+
+      - name: Install dependencies
+        working-directory: source
+        run: npm ci
+
+      - name: Build DiffSense
+        working-directory: source
+        run: npm run build
+
+      - name: Sync documentation
+        id: sync
+        run: |
+          cd $GITHUB_WORKSPACE/source
+          
+          # Copiar arquivos de documentação
+          CHANGES=false
+          
+          # Da pasta docs
+          if [ -d "docs" ]; then
+            cp -r docs/* ../wiki/
+            CHANGES=true
+          fi
+          
+          # Da pasta .github/wiki
+          if [ -d ".github/wiki" ]; then
+            cp -r .github/wiki/* ../wiki/
+            CHANGES=true
+          fi
+          
+          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+
+      - name: Commit wiki changes
+        if: steps.sync.outputs.changes == 'true'
+        run: |
+          cd $GITHUB_WORKSPACE/source
+          git config --global user.name "DiffSense Wiki Bot"
+          git config --global user.email "wiki-bot@diffsense.com"
+          
+          npm run workflow-commit -- \
+            --prefix docs \
+            --scope wiki \
+            --push \
+            --message "Synchronize documentation [automated]"

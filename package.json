@@ -1,24 +1,22 @@
 {
   "name": "@arthurcorreadev/diffsense",
   "version": "1.0.0",
-  "description": "Framework inteligente para análise de alterações em código e commits semânticos automáticos.",
+  "description": "Intelligent framework for code change analysis and automatic semantic commits.",
   "homepage": "https://github.com/ArthurProjectCorrea/diffsense#readme",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "diffsense": "bin/diffsense.js",
-    "diffsense-analyze-working-dir": "bin/analyze-working-dir.js",
-    "diffsense-commit-by-type": "bin/commit-by-type.js",
-    "diffsense-commit": "bin/commit-by-type-direct.js"
+    "diffsense": "bin/diffsense.js"
   },
   "scripts": {
     "build": "tsc",
     "start": "node bin/diffsense.js",
-    "analyze": "node bin/analyze-working-dir.js",
-    "commit-by-type": "node bin/commit-by-type.js",
-    "commit": "node bin/commit-by-type-direct.js",
-    "suggest-commit": "node scripts/suggest-commit.js",
+    "analyze": "node bin/diffsense.js run",
+    "commit-by-type": "node bin/diffsense.js commit",
+    "commit": "node bin/diffsense.js commit --simple",
+    "suggest-commit": "node bin/diffsense.js suggest",
+    "workflow-commit": "node bin/diffsense.js workflow",
     "dev": "ts-node --esm src/cli/index.ts run",
     "test": "vitest",
     "test:ci": "vitest run tests/ci-basic.test.ts",
