@@ -3,6 +3,7 @@
 /**
  * Script para agrupar e commitar alterações por tipo no DiffSense
  * Versão com sistema de pesos para classificação inteligente
+ * Melhorado com distinção entre arquivos relevantes e não relevantes para versionamento
  */
 
 import { exec, execSync } from 'child_process';
@@ -28,6 +29,33 @@ const TYPE_WEIGHTS = {
   'test': 40,    // Testes
   'chore': 30    // Manutenção
 };
+
+// Lista de padrões de arquivos irrelevantes para o versionamento semântico
+// Esses arquivos serão sempre classificados como 'chore' e terão peso reduzido
+const NON_VERSIONING_FILES = [
+  // Arquivos de lock de pacotes
+  'package-lock.json',
+  'pnpm-lock.yaml',
+  'yarn.lock',
+  
+  // Arquivos de configuração git
+  '.gitignore',
+  '.gitattributes',
+  '.github/',
+  
+  // Arquivos temporários ou cache
+  '.cache/',
+  '.vscode/',
+  '.idea/',
+  '.DS_Store',
+  'Thumbs.db',
+  '*.log',
+  
+  // Arquivos de configuração npm/pnpm
+  '.npmrc',
+  '.npmignore',
+  '.npmrc.json'
+];
 
 // Interface para interação do usuário
 const rl = createInterface({
@@ -78,6 +106,35 @@ function showProgress(message, percent) {
 }
 
 /**
+ * Verifica se um arquivo é relevante para versionamento
+ * @param {string} filePath Caminho do arquivo
+ * @returns {boolean} True se o arquivo for relevante para versionamento
+ */
+function isRelevantForVersioning(filePath) {
+  // Verificar padrões de arquivos não relevantes
+  for (const pattern of NON_VERSIONING_FILES) {
+    if (pattern.endsWith('/')) {
+      // É um padrão de diretório
+      if (filePath.includes(pattern)) {
+        return false;
+      }
+    } else if (pattern.startsWith('*.')) {
+      // É um padrão de extensão
+      const ext = pattern.replace('*', '');
+      if (filePath.endsWith(ext)) {
+        return false;
+      }
+    } else {
+      // É um nome específico de arquivo
+      if (filePath.endsWith(pattern) || filePath.includes('/' + pattern) || filePath.includes('\\' + pattern)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/**
  * Analisa o diff de um arquivo e atribui pesos para cada tipo de alteração encontrada
  * @param {string} filePath Caminho do arquivo alterado
  * @returns {Object} Objeto com os pesos para cada tipo de alteração
@@ -94,6 +151,13 @@ function analyzeFileDiff(filePath) {
     'refactor': 0,
     'chore': 0
   };
+  
+  // Verificar se o arquivo é relevante para versionamento
+  if (!isRelevantForVersioning(filePath)) {
+    // Arquivo não é relevante para versionamento, classificar como 'chore' com peso baixo
+    typeWeights['chore'] = 15; // Peso baixo fixo para arquivos não relevantes
+    return typeWeights;
+  }
   
   try {
     // Obter o diff do arquivo
@@ -261,6 +325,11 @@ function analyzeFileDiff(filePath) {
 function checkIsErrorFix(filePath) {
   // Verificar o conteúdo do arquivo para identificar alterações de erro
   try {
+    // Verificar se o arquivo é relevante para versionamento
+    if (!isRelevantForVersioning(filePath)) {
+      return false; // Não é relevante para versionamento
+    }
+    
     // 1. Verificar o diff do arquivo para identificar padrões de correção
     const diffOutput = execSync(`git diff -- "${filePath}"`, { encoding: 'utf8' });
     
@@ -339,10 +408,16 @@ function checkIsErrorFix(filePath) {
 /**
  * Verifica se uma alteração é provavelmente um breaking change
  * @param {string} fileContent Conteúdo do arquivo alterado
+ * @param {string} filePath Caminho do arquivo
  * @returns {boolean} True se for provavelmente um breaking change
  */
-function isBreakingChange(fileContent) {
+function isBreakingChange(fileContent, filePath) {
   try {
+    // Verificar se o arquivo é relevante para versionamento
+    if (!isRelevantForVersioning(filePath)) {
+      return false; // Não é relevante para versionamento
+    }
+    
     // Padrões que indicam breaking changes
     const breakingPatterns = [
       /\-\s*export/,              // Remoção de exportações
@@ -499,6 +574,15 @@ async function commitByType() {
         fileTypeWeights[filePath] = {};
       }
       
+      // Verificar se o arquivo é relevante para versionamento
+      const relevantForVersioning = isRelevantForVersioning(filePath);
+      
+      // Se não for relevante para versionamento, classificá-lo como 'chore'
+      if (!relevantForVersioning) {
+        fileTypeWeights[filePath]['chore'] = 15; // Peso baixo fixo
+        continue; // Não analisar mais este arquivo
+      }
+      
       // Usar nossa nova função para analisar o diff e obter os pesos para cada tipo
       const diffAnalysis = analyzeFileDiff(filePath);
       
@@ -552,7 +636,7 @@ async function commitByType() {
         else if (isDoc(filePath)) {
           // Verificar se é documentação com breaking changes
           const content = await fs.readFile(filePath, 'utf8').catch(() => '');
-          if (isBreakingChange(content)) {
+          if (isBreakingChange(content, filePath)) {
             fileTypeWeights[filePath]['docs!'] = (fileTypeWeights[filePath]['docs!'] || 0) + TYPE_WEIGHTS['docs!'];
           } else {
             fileTypeWeights[filePath]['docs'] = (fileTypeWeights[filePath]['docs'] || 0) + TYPE_WEIGHTS['docs'];
@@ -592,15 +676,26 @@ async function commitByType() {
       let maxWeight = 0;
       let finalType = 'chore'; // tipo padrão
       
+      // Verificar se o arquivo é relevante para versionamento
+      const relevantForVersioning = isRelevantForVersioning(filePath);
+      
       // Log detalhado de pesos para cada arquivo
-      console.log(`\n   Arquivo: ${path.basename(filePath)}`);
+      console.log(`\n   Arquivo: ${path.basename(filePath)}${!relevantForVersioning ? ' (não relevante para versionamento)' : ''}`);
       console.log(`   Pesos detectados:`);
       
-      for (const [type, weight] of Object.entries(weights)) {
-        console.log(`     - ${type}: ${weight}`);
-        if (weight > maxWeight) {
-          maxWeight = weight;
-          finalType = type;
+      // Se não for relevante para versionamento, forçar 'chore'
+      if (!relevantForVersioning) {
+        // Forçar chore para arquivos não relevantes
+        console.log(`     - chore: 15 (forçado para arquivo não relevante)`);
+        finalType = 'chore';
+        maxWeight = 15;
+      } else {
+        for (const [type, weight] of Object.entries(weights)) {
+          console.log(`     - ${type}: ${weight}`);
+          if (weight > maxWeight) {
+            maxWeight = weight;
+            finalType = type;
+          }
         }
       }
       
