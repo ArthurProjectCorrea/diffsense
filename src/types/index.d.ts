@@ -31,6 +31,11 @@ export enum ChangeType {
   DELETED = 'deleted',
   RENAMED = 'renamed'
 }
+
+/**
+ * Interface para alteração com informações adicionais
+ */
+export interface ExtendedChange {
   path?: string;
   type?: ChangeType;
   additions: number;

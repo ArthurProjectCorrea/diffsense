@@ -10,7 +10,8 @@ import {
   ScoredChange,
   SemanticChange,
   ChangeType,
-  SemanticChangeType
+  SemanticChangeType,
+  Rule
 } from './types/index.js';
 import path from 'path';
 
@@ -242,3 +243,24 @@ function generateCommitSuggestion(changes: ScoredChange[]) {
     breaking
   };
 }
+
+// Exportações adicionais para uso público da API
+export { 
+  ChangeDetector,
+  ContextCorrelator,
+  SemanticAnalyzer,
+  RulesEngine,
+  ScoringSystem,
+  Reporter,
+  // Tipos
+  AnalysisOptions,
+  AnalysisResult,
+  ScoredChange,
+  SemanticChange,
+  ChangeType,
+  SemanticChangeType,
+  Rule
+};
+
+// Versão do pacote
+export const VERSION = '1.0.0';
