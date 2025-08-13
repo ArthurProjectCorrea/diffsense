@@ -287,7 +287,7 @@ export class Reporter {
    */
   private determineCommitType(changes: ScoredChange[]): CommitType {
     // Prioridade dos tipos de commit
-    const typePriority: CommitType[] = ['feat', 'fix', 'refactor', 'docs', 'style', 'test', 'chore', 'perf', 'build', 'ci', 'revert'];
+    const typePriority: CommitType[] = ['feat', 'fix', 'refactor', 'docs', 'test'];
     
     // Contar tipos de commit
     const typeCounts: Record<string, number> = {};
@@ -306,7 +306,7 @@ export class Reporter {
     }
     
     // Default
-    return 'chore';
+    return 'refactor';
   }
   
   /**
@@ -370,10 +370,6 @@ export class Reporter {
         return `atualiza documentação`;
       case 'test':
         return `adiciona/atualiza testes`;
-      case 'style':
-        return `melhora estilo do código`;
-      case 'perf':
-        return `melhora performance`;
       default:
         return `atualiza ${changedFiles} arquivos`;
     }

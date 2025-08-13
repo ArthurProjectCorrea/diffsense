@@ -162,38 +162,46 @@ export class RulesEngine {
    * Aplica heurísticas padrão para determinar o tipo de commit
    */
   private applyDefaultHeuristics(change: SemanticChange): CommitType {
-    // Tipos de arquivos especiais
+    // Test changes
     if (change.filePath.includes('test') || change.filePath.includes('spec')) {
       return 'test';
     }
     
+    // Documentation changes
     if (change.filePath.endsWith('.md') || change.filePath.includes('/docs/')) {
       return 'docs';
     }
     
-    // Baseado no tipo de alteração
-    if (change.type === 'added') {
-      return 'feat';
-    }
-    
-    // Baseado em alterações semânticas
-    const hasFeature = change.semanticChanges.some(delta => 
+    // New features
+    if (change.type === 'added' || change.semanticChanges.some(delta => 
       delta.type === SemanticChangeType.METHOD_ADDED || 
-      delta.type === SemanticChangeType.INTERFACE_CHANGED);
-    
-    const hasImplementationChange = change.semanticChanges.some(delta => 
-      delta.type === SemanticChangeType.IMPLEMENTATION_CHANGED);
-    
-    if (hasFeature) {
+      delta.type === SemanticChangeType.INTERFACE_CHANGED)) {
       return 'feat';
     }
+    
+    // Bug fixes and implementation changes
+    const hasImplementationChange = change.semanticChanges.some(delta => 
+      delta.type === SemanticChangeType.IMPLEMENTATION_CHANGED ||
+      delta.type === SemanticChangeType.PARAMETER_ADDED ||
+      delta.type === SemanticChangeType.RETURN_TYPE_CHANGED);
     
     if (hasImplementationChange) {
       return 'fix';
     }
     
-    // Default
-    return 'chore';
+    // Code refactoring
+    const hasRefactoring = change.semanticChanges.some(delta =>
+      delta.type === SemanticChangeType.ACCESS_MODIFIER_CHANGED ||
+      delta.description.toLowerCase().includes('refactor') ||
+      delta.description.toLowerCase().includes('move') ||
+      delta.description.toLowerCase().includes('rename'));
+    
+    if (hasRefactoring) {
+      return 'refactor';
+    }
+    
+    // Default to refactor for other code changes
+    return 'refactor';
   }
   
   /**
