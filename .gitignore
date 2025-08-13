@@ -7,3 +7,7 @@ coverage/
 # pnpm específico
 .pnpm-store/
 .pnpm-debug.log
+
+# npm específico (ignorar por usar pnpm)
+package-lock.json
+.npmrc.json
