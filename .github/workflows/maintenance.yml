@@ -28,13 +28,31 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.x
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Build DiffSense
-        run: npm run build
+        run: pnpm run build
 
       - name: Setup Git
         run: |
@@ -46,23 +64,23 @@ jobs:
           # Verificar atualizações
           HAS_UPDATES=false
           
-          # Verificar atualizações de segurança
-          if npm audit fix --package-lock-only; then
+          # Verificar e atualizar dependências
+          if pnpm audit fix --no-lockfile; then
             HAS_UPDATES=true
           fi
           
           # Verificar outras atualizações
-          if npm update --package-lock-only; then
+          if pnpm update --no-lockfile; then
             HAS_UPDATES=true
           fi
           
           # Se houver atualizações, instalar e testar
           if [ "$HAS_UPDATES" = true ]; then
-            npm install
-            npm test
+            pnpm install
+            pnpm test
             
             # Criar commit semântico
-            npm run workflow-commit -- \
+            pnpm run workflow-commit -- \
               --prefix chore \
               --scope deps \
               --push \
@@ -105,16 +123,33 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: source/package-lock.json
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.x
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/source/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         working-directory: source
-        run: npm ci
+        run: pnpm install
 
       - name: Build DiffSense
         working-directory: source
-        run: npm run build
+        run: pnpm run build
 
       - name: Sync documentation
         id: sync
@@ -145,7 +180,7 @@ jobs:
           git config --global user.name "DiffSense Wiki Bot"
           git config --global user.email "wiki-bot@diffsense.com"
           
-          npm run workflow-commit -- \
+          pnpm run workflow-commit -- \
             --prefix docs \
             --scope wiki \
             --push \
