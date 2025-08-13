@@ -17,6 +17,8 @@ DiffSense is a framework for semantic analysis of source code changes, capable o
 - Identifying breaking changes, new features, fixes and more
 - Grouping commits by semantic type
 
+> **Note:** All documentation for this project is maintained in the [GitHub Wiki](https://github.com/ArthurProjectCorrea/DiffSense/wiki). Please refer to the wiki for comprehensive guides and documentation.
+
 ## Installation
 
 ```bash
@@ -315,6 +317,17 @@ npm version major  # For breaking changes (X.x.x)
 # Publish to npm
 npm publish
 ```
+
+## Documentation
+
+For complete documentation, please refer to our [GitHub Wiki](https://github.com/ArthurProjectCorrea/DiffSense/wiki).
+
+### Key Documentation Sections:
+- [Quick Start Guide](https://github.com/ArthurProjectCorrea/DiffSense/wiki/Quick-Start-Guide)
+- [Installation](https://github.com/ArthurProjectCorrea/DiffSense/wiki/Installation)
+- [Custom Rules](https://github.com/ArthurProjectCorrea/DiffSense/wiki/Custom-Rules)
+- [Semantic Commits](https://github.com/ArthurProjectCorrea/DiffSense/wiki/Semantic-Commits)
+- [Development Setup](https://github.com/ArthurProjectCorrea/DiffSense/wiki/Development-Setup)
 
 ## License
 
