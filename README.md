@@ -1,93 +1,109 @@
 # DiffSense
 
-Framework inteligente para análise de alterações em código e commits semânticos automáticos.
+Intelligent framework for code change analysis and automatic semantic commits.
 
-## Visão Geral
+[![npm version](https://badge.fury.io/js/diffsense.svg)](https://www.npmjs.com/package/diffsense)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-O DiffSense é um framework para análise semântica de alterações em código-fonte, capaz de:
+## Overview
 
-- Detectar mudanças entre commits ou branches
-- Analisar semanticamente o código através de AST (Abstract Syntax Tree)
-- Classificar alterações com base em regras configuráveis
-- Avaliar impacto e severidade das mudanças
-- Gerar sugestões de commits semânticos automaticamente
-- Identificar breaking changes, novas funcionalidades, correções e mais
+DiffSense is a framework for semantic analysis of source code changes, capable of:
 
-## Instalação
+- Detecting changes between commits or branches
+- Semantically analyzing code through AST (Abstract Syntax Tree)
+- Classifying changes based on configurable rules
+- Evaluating impact and severity of changes
+- Generating semantic commit suggestions automatically
+- Identifying breaking changes, new features, fixes and more
+- Grouping commits by semantic type
+
+## Installation
 
 ```bash
-# Instalação global
-npm install -g diffsense
+# Global installation
+npm install -g @arthurcorreadev/diffsense
 
-# Instalação local
-npm install diffsense
+# Local installation as a development dependency
+npm install --save-dev @arthurcorreadev/diffsense
+
+# Using Yarn
+yarn add @arthurcorreadev/diffsense --dev
+
+# Using pnpm
+pnpm add -D @arthurcorreadev/diffsense
 ```
 
-## Uso
+## Usage
 
-### Linha de Comando (CLI)
+### Command Line Interface (CLI)
 
 ```bash
-# Analisar mudanças no branch atual em relação ao main
+# Analyze changes in current branch compared to main
 diffsense run
 
-# Analisar mudanças entre dois commits/branches específicos
-diffsense run --base origin/main --head feature/nova-funcionalidade
+# Analyze changes between specific commits/branches
+diffsense run --base origin/main --head feature/new-feature
 
-# Gerar relatório em formato JSON
+# Generate report in JSON format
 diffsense run --format json > report.json
 
-# Gerar relatório detalhado em formato Markdown
+# Generate detailed report in Markdown format
 diffsense run --format markdown --verbose > changes.md
 
-# Inicializar configuração padrão
+# Initialize default configuration
 diffsense config --init
+
+# Commit by semantic type - analyzes and groups changes by type
+diffsense commit-by-type
+
+# Analyze only uncommitted files
+diffsense analyze-uncommitted
 ```
 
-### Como Biblioteca
+### As a Library
 
 ```typescript
-import { runAnalysis } from 'diffsense';
+import { runAnalysis } from '@arthurcorreadev/diffsense';
 
-async function analisarMudancas() {
-  const resultado = await runAnalysis('main', 'HEAD', {
+async function analyzeChanges() {
+  const result = await runAnalysis('main', 'HEAD', {
     format: 'markdown',
     configPath: './my-rules.yaml'
   });
   
-  console.log(resultado.report);
+  console.log(result.report);
   
-  // Acessar a sugestão de commit
-  if (resultado.suggestedCommit) {
-    const { type, scope, subject, breaking, body } = resultado.suggestedCommit;
-    console.log(`Sugestão de commit: ${type}${scope ? `(${scope})` : ''}${breaking ? '!' : ''}: ${subject}`);
+  // Access commit suggestion
+  if (result.suggestedCommit) {
+    const { type, scope, subject, breaking, body } = result.suggestedCommit;
+    console.log(`Commit suggestion: ${type}${scope ? `(${scope})` : ''}${breaking ? '!' : ''}: ${subject}`);
   }
 }
 
-analisarMudancas();
+analyzeChanges();
 ```
 
-## Configuração
+## Configuration
 
-O DiffSense usa arquivos de configuração YAML para definir regras de análise. Você pode criar um arquivo `.diffsenserc.yaml` na raiz do seu projeto:
+DiffSense uses YAML configuration files to define analysis rules. You can create a `.diffsenserc.yaml` file in the root of your project:
 
 ```yaml
-# Regras para classificação de mudanças
+# Rules for change classification
 rules:
   - id: tests
     match: "**/*.{spec,test}.{ts,js}"
     type: test
-    reason: "Arquivo de teste"
+    reason: "Test file"
     
   - id: docs
     match: "**/*.md"
     type: docs
-    reason: "Arquivo de documentação"
+    reason: "Documentation file"
     
   - id: public-api-remove
     match_ast: "exported.interface.* removedProperty"
     type: breaking
-    reason: "Remoção de propriedade pública"
+    reason: "Public property removed"
     
   - id: dto-change
     match_path: "src/api/contracts/**"
@@ -98,78 +114,166 @@ rules:
         set: feat
 ```
 
-## Fluxo de Funcionamento
+## Processing Flow
 
-O DiffSense segue um fluxo de processamento bem definido:
+DiffSense follows a well-defined processing flow:
 
-1. **ChangeDetector**: Identifica arquivos alterados entre duas referências do git
-2. **ContextCorrelator**: Adiciona contexto às mudanças (dependências, arquivos relacionados)
-3. **SemanticAnalyzer**: Analisa o significado das alterações através de AST
-4. **RulesEngine**: Aplica regras para classificar as mudanças
-5. **ScoringSystem**: Pontua as mudanças por importância e impacto
-6. **Reporter**: Gera relatórios e sugestões de commit
+1. **ChangeDetector**: Identifies changed files between two git references
+2. **ContextCorrelator**: Adds context to changes (dependencies, related files)
+3. **SemanticAnalyzer**: Analyzes the meaning of changes through AST
+4. **RulesEngine**: Applies rules to classify changes
+5. **ScoringSystem**: Scores changes by importance and impact
+6. **Reporter**: Generates reports and commit suggestions
 
-Para detalhes completos sobre a arquitetura, consulte [ARCHITECTURE.md](./ARCHITECTURE.md).
+For complete details on the architecture, see the [Architecture](https://github.com/ArthurProjectCorrea/diffsense/wiki/Arquitetura) documentation in our Wiki.
 
-## Desenvolvimento
+## Development
 
 ```bash
-# Clonar o repositório
+# Clone the repository
 git clone https://github.com/ArthurProjectCorrea/diffsense.git
 cd diffsense
 
-# Instalar dependências
+# Install dependencies
 npm install
 
-# Executar em modo desenvolvimento
+# Run in development mode
 npm run dev
 
-# Compilar o código
+# Compile the code
 npm run build
 
-# Executar testes
+# Run tests
 npm test
 
-# Analisar arquivos não commitados
+# Analyze uncommitted files
 npm run analyze
 
-# Commitar alterações agrupadas por tipo (feat, fix, docs, etc.)
+# Configure tokens for GitHub Actions workflows
+npm run setup-tokens
+npm run setup-github-secrets
+
+# Commit changes grouped by type (feat, fix, docs, etc.)
 npm run commit
 ```
 
-## Recursos Adicionais
+## Additional Features
 
-### Commit por Tipo
+### Commit by Type
 
-DiffSense oferece a funcionalidade de agrupar e commitar alterações por seu tipo semântico:
+DiffSense offers functionality to group and commit changes by their semantic type:
 
 ```bash
-# Usando a versão com interface melhorada (recomendada)
+# Using the version with improved interface (recommended)
 npm run commit
 
-# Usando a versão com integração completa ao DiffSense
+# Using the version with full DiffSense integration
 npm run commit-by-type
 ```
 
-Este recurso:
+This feature:
 
-1. Analisa as alterações não commitadas com uma interface amigável
-2. Classifica os arquivos automaticamente por tipo semântico:
-   - `feat`: Novas funcionalidades e implementações
-   - `fix`: Correções de bugs e problemas
-   - `docs`: Documentação e comentários
-   - `test`: Testes unitários e de integração
-   - `chore`: Configurações, dependências e arquivos de suporte
-   - `style`: Arquivos de estilo (CSS, SCSS)
-3. Cria commits separados para cada categoria com mensagens semânticas
+1. Analyzes uncommitted changes with a friendly interface
+2. Classifies files automatically by semantic type:
+   - `feat`: New features and implementations
+   - `fix`: Bug fixes and issue resolutions
+   - `docs`: Documentation and comments
+   - `test`: Unit and integration tests
+   - `chore`: Configurations, dependencies, and support files
+   - `style`: Style files (CSS, SCSS)
+3. Creates separate commits for each category with semantic messages
 
-A interface inclui barras de progresso visuais e um fluxo simplificado para uma experiência de desenvolvimento mais agradável. Isso mantém um histórico de commits mais limpo, semântico e organizado, facilitando a revisão de código e a geração de changelogs.
+The interface includes visual progress bars and a simplified flow for a more pleasant development experience. This maintains a cleaner, semantic, and organized commit history, facilitating code review and changelog generation.
 
-## Requisitos
+## Requirements
 
 - Node.js >=18.0.0
-- Git instalado e disponível no PATH
+- Git installed and available in PATH
 
-## Licença
+## Documentação
+
+A documentação completa do projeto está disponível no [Wiki do GitHub](https://github.com/ArthurProjectCorrea/diffsense/wiki).
+
+- [Quick Start Guide](https://github.com/ArthurProjectCorrea/diffsense/wiki/Quick-Start-Guide)
+- [Installation](https://github.com/ArthurProjectCorrea/diffsense/wiki/Installation)
+- [API Integration](https://github.com/ArthurProjectCorrea/diffsense/wiki/API-Integration)
+- [Custom Rules](https://github.com/ArthurProjectCorrea/diffsense/wiki/Custom-Rules)
+- [CI/CD Integration](https://github.com/ArthurProjectCorrea/diffsense/wiki/CI-CD-Integration)
+
+## Configuração e Tokens
+
+O DiffSense utiliza diversos serviços para automação de CI/CD, publicação de pacotes e atualização de dependências, que requerem tokens de acesso:
+
+### Configuração de Tokens Locais
+
+```bash
+# Configurar tokens de ambiente interativamente
+npm run setup-tokens
+
+# OU
+
+# Editar manualmente o arquivo .env
+# (Use .env.example como modelo)
+```
+
+### Configuração de Secrets no GitHub
+
+Para que os workflows do GitHub Actions funcionem corretamente, você precisa configurar os secrets:
+
+```bash
+# Configurar secrets do GitHub a partir dos tokens locais
+npm run setup-github-secrets
+```
+
+Ou configurar manualmente no GitHub:
+1. Acesse seu repositório > Settings > Secrets and variables > Actions
+2. Adicione os secrets necessários (`NPM_TOKEN`, `SONAR_TOKEN`, `CODECOV_TOKEN`)
+
+Para mais detalhes, consulte:
+- [Configuração de Secrets](https://github.com/ArthurProjectCorrea/diffsense/wiki/Configuração-de-Secrets)
+- [Secret Configuration](https://github.com/ArthurProjectCorrea/diffsense/wiki/Secret-Configuration)
+
+## Contribution and Publishing
+
+### Contributing to the project
+
+```bash
+# Fork and clone the repository
+git clone https://github.com/your-username/diffsense.git
+cd diffsense
+
+# Install dependencies
+npm install
+
+# Configure tokens for development
+npm run setup-tokens
+
+# Create branch for your feature
+git checkout -b feature/new-functionality
+
+# Implement changes and test
+npm test
+
+# Submit pull request
+```
+
+### Publishing to npm
+
+If you are a project maintainer, follow these steps for publication:
+
+```bash
+# Test local package installation
+npm run test:install
+
+# Publish a new version (automatically updates version and creates git tags)
+npm version patch  # For bug fixes (x.x.X)
+npm version minor  # For new features (x.X.x)
+npm version major  # For breaking changes (X.x.x)
+
+# Publish to npm
+npm publish
+```
+
+## License
 
 MIT
