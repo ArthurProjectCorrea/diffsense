@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'fs';
 
 describe('Testes do DiffSense', () => {
   it('deve verificar a configuração do projeto', () => {
@@ -6,7 +7,6 @@ describe('Testes do DiffSense', () => {
     // Aqui podemos adicionar verificações básicas do ambiente
     
     // Verificar se os principais arquivos existem
-    const fs = require('fs');
     expect(fs.existsSync('./package.json')).toBe(true);
     expect(fs.existsSync('./tsconfig.json')).toBe(true);
     

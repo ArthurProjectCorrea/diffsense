@@ -3,7 +3,7 @@ import { SemanticAnalyzer } from '../../src/core/semantic-analyzer';
 import { Change, ChangeType, ContextualizedChange } from '../../src/types';
 
 // Mock para ts-morph
-vi.mock('ts-morph', () => {
+vi.mock('ts-morph', async () => {
   return {
     Project: vi.fn().mockImplementation(() => ({
       getSourceFiles: vi.fn().mockReturnValue([]),
