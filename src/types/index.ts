@@ -1,29 +1,29 @@
 /**
- * Tipos principais usados pelo framework DiffSense
+ * Main types used by the DiffSense framework
  */
 
 /**
- * Representa um arquivo alterado e suas informações
+ * Represents a changed file and its information
  */
 export interface Change {
-  /** Caminho do arquivo */
+  /** Path to the file */
   filePath: string;
   
-  /** Tipo de alteração */
+  /** Type of change */
   type: ChangeType;
   
-  /** Conteúdo antes da alteração (pode ser vazio se for arquivo novo) */
+  /** Content before the change (can be empty if file is new) */
   oldContent?: string;
   
-  /** Conteúdo após a alteração (pode ser vazio se arquivo foi removido) */
+  /** Content after the change (can be empty if file was deleted) */
   newContent?: string;
   
-  /** Metadados relacionados à alteração */
+  /** Metadata related to the change */
   metadata: ChangeMetadata;
 }
 
 /**
- * Tipos possíveis de alteração
+ * Possible types of change
  */
 export enum ChangeType {
   ADDED = 'added',
@@ -33,16 +33,16 @@ export enum ChangeType {
 }
 
 /**
- * Metadados relacionados a uma alteração
+ * Metadata related to a change
  */
 export interface ChangeMetadata {
-  /** Número de linhas adicionadas */
+  /** Number of lines added */
   linesAdded: number;
   
-  /** Número de linhas removidas */
+  /** Number of lines removed */
   linesRemoved: number;
   
-  /** Informação adicional dependendo do tipo de arquivo */
+  /** Additional information depending on file type */
   fileType?: string;
   
   /** Se a alteração é binária ou textual */
