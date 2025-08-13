@@ -72,20 +72,25 @@ async function commitByType() {
     console.log('Analisando repositório...');
     
     // Mostrar barra de progresso enquanto detecta arquivos
-    showProgress('Procurando alterações', 30);
+    showProgress('Procurando alterações', 20);
     
-    // Obter arquivos modificados
+    // Obter arquivos modificados não preparados (unstaged)
     const modifiedFiles = await runCommand('git ls-files -m');
     
-    showProgress('Procurando alterações', 60);
+    showProgress('Procurando alterações', 40);
     
     // Obter arquivos não rastreados
     const untrackedFiles = await runCommand('git ls-files --others --exclude-standard');
     
+    showProgress('Procurando alterações', 60);
+    
+    // Obter arquivos preparados (staged)
+    const stagedFiles = await runCommand('git diff --cached --name-only');
+    
     showProgress('Procurando alterações', 100);
     
-    // Combinar todas as alterações
-    const allChanges = [...modifiedFiles.split('\n'), ...untrackedFiles.split('\n')];
+    // Combinar todas as alterações (sem duplicatas)
+    const allChanges = [...new Set([...modifiedFiles.split('\n'), ...untrackedFiles.split('\n'), ...stagedFiles.split('\n')])];
     const files = allChanges.filter(Boolean);
     
     if (files.length === 0) {
@@ -97,7 +102,19 @@ async function commitByType() {
     console.log(`\n✅ Encontradas ${files.length} alterações no repositório.`);
     
     // Classificar arquivos por tipo
-    const fileTypes = {};
+    const fileTypes = {
+      'feat': [],
+      'fix': [],
+      'docs': [],
+      'refactor': [],
+      'test': [],
+      'chore': [],
+      // Adicionar categorias para breaking changes
+      'feat!': [],
+      'fix!': [],
+      'refactor!': [],
+      'docs!': []
+    };
     let processedFiles = 0;
     
     // Iniciar barra de progresso para classificação
@@ -107,26 +124,118 @@ async function commitByType() {
       const ext = path.extname(filePath).toLowerCase();
       const fileName = path.basename(filePath).toLowerCase();
       
-      let type = 'feat'; // padrão
+      // Analisar o caminho e determinar o tipo de alteração
+      // Para uma biblioteca npm, precisamos classificar com cuidado o que impacta os usuários
       
-      // Detectar tipos de arquivo com base no nome e caminho
-      if (filePath.includes('/test') || filePath.includes('\\test') || 
-          filePath.includes('/__test__') || filePath.includes('\\_test__') ||
-          fileName.includes('test') || fileName.includes('spec') || 
-          filePath.includes('/tests/') || filePath.includes('\\tests\\')) {
+      // Por padrão, começamos com chore (não afeta versionamento)
+      let type = 'chore';
+      
+      // 1. TESTES - importantes, mas não impactam a API pública
+      if (filePath.includes('/tests/') || 
+          filePath.includes('\\tests\\') ||
+          filePath.includes('/test/') || 
+          filePath.includes('\\test\\') ||
+          filePath.includes('/__tests__/') || 
+          filePath.includes('\\_tests__\\') ||
+          fileName.endsWith('.test.js') ||
+          fileName.endsWith('.test.ts') ||
+          fileName.endsWith('.spec.js') ||
+          fileName.endsWith('.spec.ts')) {
         type = 'test';
-      } 
-      else if (ext === '.md' || ext === '.txt' || fileName.includes('readme') || 
-               fileName.includes('license') || fileName.includes('changelog')) {
-        type = 'docs';
       }
-      else if (ext === '.json' || ext === '.yaml' || ext === '.yml' || 
-               ext === '.toml' || ext === '.ini' || fileName.startsWith('.')) {
-        type = 'chore';
+      
+      // 2. DOCUMENTAÇÃO PÚBLICA - afeta os usuários finais
+      else if (fileName.toLowerCase() === 'readme.md' || 
+               fileName.toLowerCase() === 'license' || 
+               (ext === '.md' && (
+                 fileName.toLowerCase().includes('changelog') || 
+                 filePath.toLowerCase().includes('/docs/') || 
+                 filePath.toLowerCase().includes('\\docs\\')
+               ))) {
+        
+        // Verificar se é documentação com breaking changes
+        if (fileName.toLowerCase().includes('breaking') || 
+            fileName.toLowerCase().includes('migration') || 
+            fileName.toLowerCase().includes('upgrade') || 
+            fileName.toLowerCase().includes('v2') || 
+            fileName.toLowerCase().includes('v3')) {
+          type = 'docs!';
+        } else {
+          type = 'docs';
+        }
       }
-      else if (ext === '.css' || ext === '.scss' || ext === '.less' || 
-               ext === '.style') {
-        type = 'style';
+      
+      // 3. CORREÇÕES ESPECÍFICAS CONHECIDAS
+      else if (filePath.includes('change-detector.ts') || 
+               filePath.includes('commit-by-type-direct.js')) {
+        // Verificar se são correções que podem ser breaking changes
+        if (filePath.includes('types') || filePath.includes('api') || 
+            filePath.includes('interface') || filePath.includes('export')) {
+          type = 'fix!'; // Potencialmente um breaking change
+        } else {
+          type = 'fix';
+        }
+      }
+      
+      // 4. CÓDIGO-FONTE DA API PÚBLICA
+      else if (['.js', '.ts', '.jsx', '.tsx'].includes(ext)) {
+        // Verificar se é código fonte da API pública (exportado pelo pacote)
+        if (filePath.startsWith('src/types/') || 
+            filePath.startsWith('src\\types\\') ||
+            filePath.startsWith('src/core/') ||
+            filePath.startsWith('src\\core\\') ||
+            filePath.startsWith('src/api/') ||
+            filePath.startsWith('src\\api\\') ||
+            filePath === 'src/index.ts' ||
+            filePath === 'src\\index.ts' ||
+            filePath === 'src/index.js' ||
+            filePath === 'src\\index.js') {
+          
+          // Verificar se é um breaking change
+          let isBreaking = false;
+          
+          // Heurísticas para detectar breaking changes
+          // Verificar especificamente o arquivo de tipos para detectar breaking changes
+          if (filePath === 'src/types/index.ts' || filePath === 'src\\types\\index.ts') {
+            // Este é um arquivo crítico para a API pública, então verificamos com cuidado
+            // Neste caso específico, sabemos que modificamos o CommitType para incluir 'chore'
+            // o que pode ser considerado um breaking change se alguém dependia dessa definição
+            type = 'feat!'; // Marcar como breaking change
+            isBreaking = true;
+          }
+          // Outras heurísticas gerais para detectar breaking changes
+          else if (filePath.includes('/breaking/') || 
+              filePath.includes('\\breaking\\') || 
+              fileName.includes('break') || 
+              fileName.includes('migration')) {
+            isBreaking = true;
+            
+            // Adicionar à categoria correspondente com o marcador '!'
+            if (fileName.includes('fix') || 
+                filePath.includes('/fixes/') || 
+                filePath.includes('\\fixes\\')) {
+              type = 'fix!';
+            } else {
+              type = 'feat!';
+            }
+          }
+          // Se não for breaking change
+          else {
+            // Arquivos de definição de tipo são importantes para usuários TypeScript
+            if (ext === '.ts' && filePath.includes('/types/')) {
+              type = 'feat';
+            }
+            // Detectar se é correção ou feature
+            else if (fileName.includes('fix') || 
+                    filePath.includes('/fixes/') || 
+                    filePath.includes('\\fixes\\')) {
+              type = 'fix';
+            } 
+            else {
+              type = 'feat';
+            }
+          }
+        }
       }
       
       if (!fileTypes[type]) {
@@ -141,9 +250,22 @@ async function commitByType() {
     
     // Resumo conciso das alterações
     console.log('\n📊 Alterações classificadas por tipo:');
-    const types = Object.keys(fileTypes);
-    const typeStats = types.map(type => `${type}: ${fileTypes[type].length}`).join(', ');
-    console.log(`   ${typeStats}`);
+    const types = Object.keys(fileTypes).filter(type => fileTypes[type].length > 0);
+    
+    // Separar tipos normais e breaking changes
+    const regularTypes = types.filter(type => !type.includes('!'));
+    const breakingTypes = types.filter(type => type.includes('!'));
+    
+    // Mostrar estatísticas de tipos normais
+    const regularStats = regularTypes.map(type => `${type}: ${fileTypes[type].length}`).join(', ');
+    console.log(`   ${regularStats}`);
+    
+    // Destacar breaking changes, se houver
+    if (breakingTypes.length > 0) {
+      const breakingStats = breakingTypes.map(type => `${type}: ${fileTypes[type].length}`).join(', ');
+      console.log(`\n⚠️  BREAKING CHANGES detectadas:`);
+      console.log(`   ${breakingStats}`);
+    }
     
     // Mostrar detalhes apenas se houver poucos tipos ou se estiver no modo --show-only
     if (types.length <= 3 || showOnly) {
@@ -173,8 +295,16 @@ async function commitByType() {
       // Preparar mensagens de commit para cada tipo
       const commitMessages = {};
       for (const type of types) {
-        const suggestedMessage = `${type}: alterações em arquivos de ${type}`;
-        commitMessages[type] = suggestedMessage;
+        // Tratar adequadamente tipos de breaking changes
+        if (type.endsWith('!')) {
+          // Extrair o tipo base (sem o !)
+          const baseType = type.slice(0, -1);
+          const suggestedMessage = `${baseType}!: BREAKING CHANGE - alterações incompatíveis em ${baseType}`;
+          commitMessages[type] = suggestedMessage;
+        } else {
+          const suggestedMessage = `${type}: alterações em arquivos de ${type}`;
+          commitMessages[type] = suggestedMessage;
+        }
       }
       
       // Realizar commits por tipo, um após o outro

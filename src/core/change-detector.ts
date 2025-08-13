@@ -38,30 +38,47 @@ export class ChangeDetector {
       let changedFiles: { filePath: string; type: ChangeType; }[] = [];
       
       if (isWorkingDir) {
-        // Para mudanças no diretório de trabalho, incluindo arquivos não rastreados
+        // Para mudanças no diretório de trabalho, incluindo arquivos não rastreados e staged
         
-        // 1. Primeiro, obtenha as alterações nos arquivos rastreados
-        const diffResult = await this.git.diff(['--name-status', baseRef]);
-        changedFiles = this.parseNameStatus(diffResult);
+        // 1. Primeiro, obtenha o status de todos os arquivos
+        const status = await this.git.status();
         
-        // 2. Depois, obtenha os arquivos não rastreados (novos)
-        const untrackedResult = await this.git.raw(['ls-files', '--others', '--exclude-standard']);
-        const untrackedFiles = untrackedResult.trim();
+        // 2. Processar arquivos staged
+        status.staged.forEach(filePath => {
+          changedFiles.push({
+            filePath,
+            type: ChangeType.MODIFIED // Será ajustado depois baseado no conteúdo
+          });
+        });
         
-        const untrackedCount = untrackedFiles ? untrackedFiles.split('\n').filter((f: string) => f.trim()).length : 0;
-        console.log(`Detectados ${untrackedCount} arquivos não rastreados`);
-        
-        // Adicione cada arquivo não rastreado como "adicionado"
-        if (untrackedFiles) {
-          untrackedFiles.split('\n')
-            .filter((f: string) => f.trim())
-            .forEach((filePath: string) => {
-              changedFiles.push({
-                filePath,
-                type: ChangeType.ADDED
-              });
+        // 3. Processar arquivos não staged
+        status.modified.forEach(filePath => {
+          if (!changedFiles.some(f => f.filePath === filePath)) {
+            changedFiles.push({
+              filePath,
+              type: ChangeType.MODIFIED
             });
-        }
+          }
+        });
+        
+        // 4. Processar arquivos deletados
+        status.deleted.forEach(filePath => {
+          changedFiles.push({
+            filePath,
+            type: ChangeType.DELETED
+          });
+        });
+        
+        // 5. Processar arquivos não rastreados
+        status.not_added.forEach(filePath => {
+          changedFiles.push({
+            filePath,
+            type: ChangeType.ADDED
+          });
+        });
+        
+        // Log do total de arquivos encontrados
+        console.log(`Detectados ${changedFiles.length} arquivos alterados`);
       } else {
         // Para mudanças entre duas referências, use o diff normal
         const diffResult = await this.git.diff(['--name-status', baseRef, headRef]);
