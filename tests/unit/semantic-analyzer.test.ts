@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SemanticAnalyzer } from '../../src/core/semantic-analyzer';
 import { Change, ChangeType, ContextualizedChange } from '../../src/types';
 
-// Mock para ts-morph
+// Mock for ts-morph
 vi.mock('ts-morph', async () => {
   return {
     Project: vi.fn().mockImplementation(() => ({

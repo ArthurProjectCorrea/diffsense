@@ -5,7 +5,7 @@ import { SemanticAnalyzer } from '../../src/core/semantic-analyzer';
 import { ScoringSystem } from '../../src/core/scoring';
 import { Change, ChangeType, SemanticChange } from '../../src/types/index';
 
-// Mock para simpleGit
+// Mock for simpleGit
 vi.mock('simple-git', () => {
   return {
     default: vi.fn().mockImplementation(() => ({
@@ -23,7 +23,7 @@ vi.mock('simple-git', () => {
   };
 });
 
-// Mocks para módulos do Node
+// Mocks for Node modules
 vi.mock('fs', () => ({
   readFileSync: vi.fn().mockImplementation((path) => {
     if (path.includes('default-rules.yaml')) {

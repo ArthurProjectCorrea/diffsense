@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { descri    reason: "Fix in JavaScript file"e, it, expect, vi, beforeEach } from 'vitest';
 import { RulesEngine } from '../../src/core/rules-engine';
 import { SemanticChange, ChangeType, SemanticChangeType } from '../../src/types';
 
@@ -9,11 +9,11 @@ vi.mock('fs', () => ({
 - id: test-rule
   match: "**/*.ts"
   type: feat
-  reason: "Arquivo TypeScript"
+  reason: "TypeScript file"
 - id: fix-rule
   match: "**/*.js"
   type: fix
-  reason: "Correção em arquivo JavaScript"
+  reason: "Fix in JavaScript file"
     `;
   }),
   existsSync: vi.fn().mockReturnValue(true)
@@ -26,12 +26,12 @@ describe('RulesEngine', () => {
     rulesEngine = new RulesEngine();
   });
   
-  it('deve carregar regras padrão', () => {
+  it('should load default rules', () => {
     expect(rulesEngine['rules']).toBeInstanceOf(Array);
     expect(rulesEngine['rules'].length).toBeGreaterThan(0);
   });
   
-  it('deve aplicar regras às mudanças', () => {
+  it('should apply rules to changes', () => {
     const changes: SemanticChange[] = [
       {
         filePath: 'src/example.ts',
@@ -44,7 +44,7 @@ describe('RulesEngine', () => {
         semanticChanges: [
           {
             type: SemanticChangeType.METHOD_ADDED,
-            description: 'Nova função adicionada: exemplo',
+            description: 'New function added: example',
             severity: 'low',
             affectedSymbol: 'exemplo'
           }

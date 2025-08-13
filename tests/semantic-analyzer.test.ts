@@ -135,7 +135,7 @@ describe('SemanticAnalyzer', () => {
       // um erro ocorre durante a análise
       const fileChanges: FileChange[] = [
         {
-          // Usando um caminho que sabemos que não existe para forçar um erro
+          // Using a path we know doesn't exist to force an error
           path: '/path/invalid/file.ts', 
           status: 'added',
           previousPath: '',

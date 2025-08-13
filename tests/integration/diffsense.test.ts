@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runAnalysis } from '../../src/index';
 
-// Mock para o módulo simple-git
+// Mock for simple-git module
 vi.mock('simple-git', () => {
   return {
     default: vi.fn().mockImplementation(() => ({

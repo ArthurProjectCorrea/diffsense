@@ -37,7 +37,7 @@ describe('Reporter', () => {
     
     expect(typeof result).toBe('string');
     
-    // Parse o resultado para verificar seu conteúdo
+    // Parse the result to verify its content
     const parsedResult = JSON.parse(result);
     expect(parsedResult).toBeDefined();
     expect(parsedResult.changes).toBeInstanceOf(Array);
