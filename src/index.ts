@@ -68,7 +68,7 @@ export async function runAnalysis(
     const rulesEngine = new RulesEngine(options.configPath);
     
     // Convert ISemanticAnalysis[] to SemanticChange[]
-    const semanticChanges: SemanticChange[] = analyzedChanges.map(analysis => {
+    const semanticChanges = analyzedChanges.map(analysis => {
       // Mapear o resultado do novo SemanticAnalyzer para o formato esperado pelo sistema legado
       const baseChange = contextualizedChanges.find(c => c.filePath === analysis.file) || 
                         contextualizedChanges[0] || 
@@ -124,13 +124,16 @@ export async function runAnalysis(
         semanticChanges: analysis.semanticChanges.map((sc: {description?: string}) => ({
           type: SemanticChangeType.IMPLEMENTATION_CHANGED,
           description: sc.description,
-          severity: analysis.impact === 'major' ? 'breaking' : 
-                   analysis.impact === 'moderate' ? 'medium' : 'low'
+          severity: (analysis.impact === 'major' ? 'breaking' : 
+                   analysis.impact === 'moderate' ? 'medium' : 'low') as 'breaking' | 'medium' | 'low'
         })),
-        affectedSymbols: analysis.details?.addedExports || 
-                        analysis.details?.removedExports || 
-                        analysis.details?.addedDeclarations || 
-                        [],
+        affectedSymbols: Array.isArray(analysis.details?.addedExports) 
+                        ? analysis.details.addedExports 
+                        : Array.isArray(analysis.details?.removedExports) 
+                        ? analysis.details.removedExports 
+                        : Array.isArray(analysis.details?.addedDeclarations)
+                        ? analysis.details.addedDeclarations
+                        : [],
         // Adicionar informações de commit para uso no commit-by-type
         commitType,
         impact: analysis.impact
