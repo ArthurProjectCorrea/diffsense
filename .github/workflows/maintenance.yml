@@ -159,17 +159,18 @@ jobs:
           # Copiar arquivos de documentação
           CHANGES=false
           
-          # Da pasta docs
-          if [ -d "docs" ]; then
-            cp -r docs/* ../wiki/
-            CHANGES=true
-          fi
+          # Garantir que a pasta wiki existe
+          mkdir -p ../wiki
           
-          # Da pasta .github/wiki
+          # Da pasta .github/wiki (fonte principal da documentação)
           if [ -d ".github/wiki" ]; then
             cp -r .github/wiki/* ../wiki/
             CHANGES=true
+            echo "Synchronized documentation from .github/wiki to GitHub Wiki"
           fi
+          
+          # Nota: As pastas docs/ e outros arquivos .md na raiz não serão mais sincronizados
+          # já que toda a documentação estará centralizada na wiki
           
           echo "changes=$CHANGES" >> $GITHUB_OUTPUT
 

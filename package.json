@@ -36,6 +36,7 @@
     "// === Comandos de Configuração ===": "",
     "config": "node scripts/setup-tokens.js",
     "config:github": "node scripts/setup-github-secrets.js",
+    "wiki:sync": "pnpm run build && node scripts/sync-wiki.js",
     "// === Comandos de Ciclo de Vida do Pacote ===": "",
     "ci": "pnpm run lint && pnpm run check-types && pnpm run test:ci",
     "prepare": "pnpm run build",
