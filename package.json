@@ -37,7 +37,8 @@
     "setup-tokens": "node scripts/setup-tokens.js",
     "config": "node scripts/setup-tokens.js",
     "coverage": "vitest run --coverage",
-    "setup-github-secrets": "node scripts/setup-github-secrets.js"
+    "setup-github-secrets": "node scripts/setup-github-secrets.js",
+    "commit-smart": "node bin/commit-by-type-new.js"
   },
   "files": [
     "dist/",
