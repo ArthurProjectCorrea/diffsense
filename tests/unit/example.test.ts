@@ -1,9 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest'; // afterEach não está sendo usado
 import { ChangeDetector } from '../../src/core/change-detector';
 import { RulesEngine } from '../../src/core/rules-engine';
+// SemanticAnalyzer é importado para referência de tipo, mas não é diretamente utilizado
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { SemanticAnalyzer } from '../../src/core/semantic-analyzer';
 import { ScoringSystem } from '../../src/core/scoring';
-import { Change, ChangeType, SemanticChange } from '../../src/types/index';
+// Change é importado para referência de tipo, mas não é diretamente utilizado
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { Change, ChangeType, SemanticChange, SemanticChangeType } from '../../src/types/index';
 
 // Mock for simpleGit
 vi.mock('simple-git', () => {
@@ -113,7 +117,7 @@ describe('RulesEngine', () => {
       },
       semanticChanges: [
         {
-          type: 'METHOD_ADDED' as any,
+          type: SemanticChangeType.METHOD_ADDED,
           description: 'Nova função adicionada: exemplo',
           severity: 'low',
           affectedSymbol: 'exemplo'
@@ -151,7 +155,7 @@ describe('ScoringSystem', () => {
       },
       semanticChanges: [
         {
-          type: 'METHOD_ADDED' as any,
+          type: SemanticChangeType.METHOD_ADDED,
           description: 'Nova função adicionada: exemplo',
           severity: 'low',
           affectedSymbol: 'exemplo'
