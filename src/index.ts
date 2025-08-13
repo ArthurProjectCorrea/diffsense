@@ -110,9 +110,9 @@ export async function runAnalysis(
       }
       
       // Sobrescrever com base na análise semântica
-      if (analysis.semanticChanges.some(c => c.type === 'file_deleted')) {
+      if (analysis.semanticChanges.some((c: {type: string}) => c.type === 'file_deleted')) {
         commitType = 'refactor';
-      } else if (analysis.semanticChanges.some(c => c.description?.includes('fix') || 
+      } else if (analysis.semanticChanges.some((c: {description?: string}) => c.description?.includes('fix') || 
                                                  c.description?.includes('corrige') || 
                                                  c.description?.includes('resolve'))) {
         commitType = 'fix';
@@ -120,7 +120,7 @@ export async function runAnalysis(
       
       return {
         ...baseChange,
-        semanticChanges: analysis.semanticChanges.map(sc => ({
+        semanticChanges: analysis.semanticChanges.map((sc: {description?: string}) => ({
           type: SemanticChangeType.IMPLEMENTATION_CHANGED,
           description: sc.description,
           severity: analysis.impact === 'major' ? 'breaking' : 
