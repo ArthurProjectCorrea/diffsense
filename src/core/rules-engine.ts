@@ -108,7 +108,7 @@ export class RulesEngine {
     // Isso exigiria uma análise mais profunda do AST
     // e seria implementado na versão completa
     if (rule.match_ast && change.semanticChanges.some(delta => 
-      delta.description.includes(rule.match_ast!))) {
+      delta.description?.includes(rule.match_ast!))) {
       return true;
     }
     
@@ -137,8 +137,8 @@ export class RulesEngine {
    */
   private checkDtoPropertyRemoved(change: SemanticChange): boolean {
     return change.semanticChanges.some(delta => 
-      delta.description.includes('removido da interface') || 
-      delta.description.includes('removed from interface'));
+      delta.description?.includes('removido da interface') || 
+      delta.description?.includes('removed from interface'));
   }
   
   /**
@@ -146,8 +146,8 @@ export class RulesEngine {
    */
   private checkDtoAddedOptional(change: SemanticChange): boolean {
     return change.semanticChanges.some(delta => 
-      delta.description.includes('(opcional)') || 
-      delta.description.includes('(optional)'));
+      delta.description?.includes('(opcional)') || 
+      delta.description?.includes('(optional)'));
   }
   
   /**
@@ -192,9 +192,9 @@ export class RulesEngine {
     // Code refactoring
     const hasRefactoring = change.semanticChanges.some(delta =>
       delta.type === SemanticChangeType.ACCESS_MODIFIER_CHANGED ||
-      delta.description.toLowerCase().includes('refactor') ||
-      delta.description.toLowerCase().includes('move') ||
-      delta.description.toLowerCase().includes('rename'));
+      delta.description?.toLowerCase().includes('refactor') ||
+      delta.description?.toLowerCase().includes('move') ||
+      delta.description?.toLowerCase().includes('rename'));
     
     if (hasRefactoring) {
       return 'refactor';
@@ -232,7 +232,7 @@ export class RulesEngine {
   private generateDescription(change: SemanticChange): string {
     // Se houver apenas uma alteração significativa
     if (change.semanticChanges.length === 1) {
-      return change.semanticChanges[0].description;
+      return change.semanticChanges[0].description || `Change in ${path.basename(change.filePath)}`;
     }
     
     // Se for uma mudança em arquivo de teste

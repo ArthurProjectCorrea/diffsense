@@ -1,6 +1,6 @@
 import { Project, Node, SourceFile, SyntaxKind, ts } from 'ts-morph';
 import path from 'path';
-import { ISemanticAnalysis, FileChange } from '../types';
+import { ISemanticAnalysis, FileChange } from '../types/index.js';
 import { IConfiguration } from '../config/configuration';
 import { DependencyGraph } from './dependency-graph.js';
 

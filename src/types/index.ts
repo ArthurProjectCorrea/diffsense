@@ -3,6 +3,57 @@
  */
 
 /**
+ * File change status
+ */
+export type FileStatus = 'added' | 'modified' | 'renamed' | 'deleted';
+
+/**
+ * Represents a file change (compatibility with semantic analyzer)
+ */
+export interface FileChange {
+  /**
+   * Current path of the file
+   */
+  path: string;
+  
+  /**
+   * Status of the change
+   */
+  status: FileStatus;
+  
+  /**
+   * Previous path of the file (if applicable, for rename or move)
+   */
+  previousPath: string;
+}
+
+/**
+ * Impact level of a semantic change
+ */
+export type ImpactLevel = 'minor' | 'moderate' | 'major';
+
+/**
+ * Interface for semantic analysis results
+ * Fixed to prevent TypeScript errors in semantic-analyzer.ts
+ */
+export interface ISemanticAnalysis {
+  file: string;
+  impact?: ImpactLevel;
+  summary?: string;
+  // Fixed: added optional properties to fix TS2305 errors
+  semanticChanges: Array<{
+    type: string;
+    description?: string;
+  }>;
+  details?: {
+    addedExports?: string[];
+    removedExports?: string[];
+    modifiedExports?: string[];
+    [key: string]: any;
+  };
+}
+
+/**
  * Represents a changed file and its information
  */
 export interface Change {
@@ -122,7 +173,7 @@ export interface SemanticDelta {
   type: SemanticChangeType;
   
   /** Descrição da mudança */
-  description: string;
+  description?: string;
   
   /** Nível de gravidade da mudança */
   severity: 'low' | 'medium' | 'high' | 'breaking';
