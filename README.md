@@ -38,26 +38,68 @@ pnpm add -D @arthurcorreadev/diffsense
 ### Command Line Interface (CLI)
 
 ```bash
+# Get detailed help
+diffsense help
+
 # Analyze changes in current branch compared to main
 diffsense run
 
-# Analyze changes between specific commits/branches
+# Analyze changes between specific branches/commits
 diffsense run --base origin/main --head feature/new-feature
 
 # Generate report in JSON format
 diffsense run --format json > report.json
 
-# Generate detailed report in Markdown format
+# Gera relatório detalhado em formato Markdown
 diffsense run --format markdown --verbose > changes.md
 
-# Initialize default configuration
+# Comita alterações agrupadas por tipo semântico (interface interativa)
+diffsense commit
+
+# Comita alterações usando interface simplificada
+diffsense commit --simple
+
+# Apenas visualiza as alterações sem commitar
+diffsense commit --show-only
+
+# Sugere mensagem de commit para mudanças staged
+diffsense suggest --staged
+
+# Sugere commit baseado em alterações entre commits específicos
+diffsense suggest --from HEAD~3 --to HEAD
+
+# Commit automático para pipelines CI/CD
+diffsense workflow --push
+
+# Commit automático com prefixo e escopo personalizado
+diffsense workflow --prefix feat --scope api --push
+
+# Inicializa configuração padrão
 diffsense config --init
 
-# Commit by semantic type - analyzes and groups changes by type
-diffsense commit-by-type
+# Mostra configuração atual
+diffsense config --show
+```
 
-# Analyze only uncommitted files
-diffsense analyze-uncommitted
+### Através dos scripts NPM
+
+O DiffSense também pode ser executado através dos scripts definidos no package.json:
+
+```bash
+# Analisa alterações
+npm run analyze
+
+# Commit por tipo semântico (interface interativa)
+npm run commit-by-type
+
+# Commit por tipo semântico (interface simplificada) 
+npm run commit
+
+# Apenas sugere mensagem de commit
+npm run suggest-commit
+
+# Commit automático para workflows CI/CD
+npm run workflow-commit -- --push
 ```
 
 ### As a Library
@@ -190,9 +232,9 @@ The interface includes visual progress bars and a simplified flow for a more ple
 - Node.js >=18.0.0
 - Git installed and available in PATH
 
-## Documentação
+## Documentation
 
-A documentação completa do projeto está disponível no [Wiki do GitHub](https://github.com/ArthurProjectCorrea/diffsense/wiki).
+Complete project documentation is available in the [GitHub Wiki](https://github.com/ArthurProjectCorrea/diffsense/wiki).
 
 - [Quick Start Guide](https://github.com/ArthurProjectCorrea/diffsense/wiki/Quick-Start-Guide)
 - [Installation](https://github.com/ArthurProjectCorrea/diffsense/wiki/Installation)
