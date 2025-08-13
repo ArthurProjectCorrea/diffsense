@@ -12,6 +12,9 @@ import path from 'path';
 
 const execAsync = promisify(exec);
 
+// Verificar se a opção --show-only foi passada
+const showOnly = process.argv.includes('--show-only');
+
 // Interface para interação com o usuário
 const rl = createInterface({
   input: process.stdin,
@@ -142,16 +145,23 @@ async function commitByType() {
     const typeStats = types.map(type => `${type}: ${fileTypes[type].length}`).join(', ');
     console.log(`   ${typeStats}`);
     
-    // Mostrar detalhes apenas se houver poucos tipos
-    if (types.length <= 3) {
+    // Mostrar detalhes apenas se houver poucos tipos ou se estiver no modo --show-only
+    if (types.length <= 3 || showOnly) {
       types.forEach(type => {
         const fileCount = fileTypes[type].length;
-        if (fileCount <= 3) {
+        if (fileCount <= 3 || showOnly) {
           console.log(`   • ${type} (${fileCount}): ${fileTypes[type].map(f => path.basename(f)).join(', ')}`);
         } else {
           console.log(`   • ${type} (${fileCount}): ${fileTypes[type].slice(0, 2).map(f => path.basename(f)).join(', ')}... e outros ${fileCount - 2}`);
         }
       });
+    }
+    
+    // Se estiver no modo --show-only, apenas mostrar os dados e finalizar
+    if (showOnly) {
+      console.log('\n📋 Modo de visualização apenas. Nenhum commit será realizado.');
+      rl.close();
+      return;
     }
     
     // Verificar se o usuário deseja fazer os commits

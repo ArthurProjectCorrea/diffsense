@@ -26,6 +26,7 @@ program
   .option('--to <sha>', 'SHA do commit final para comparação (default: HEAD)')
   .option('--branch <branch>', 'Branch base para comparação (e.g., main, develop)')
   .option('--staged', 'Analisar apenas mudanças staged')
+  .option('--all', 'Analisar todas as alterações no repositório (como o comando "commit")')
   .parse(process.argv);
 
 const options = program.opts();
@@ -33,7 +34,27 @@ const options = program.opts();
 // Determinar os commits para comparação
 let fromSha, toSha;
 
-if (options.staged) {
+if (options.all) {
+  // Para análise de todas as alterações, use o comando commit original
+  console.log('Analisando todas as alterações no repositório...');
+  
+  try {
+    // Executar o comando commit direto para ver as alterações
+    console.log('Executando análise completa com o comando "commit"...');
+    console.log('\nPara visualizar as alterações em detalhes, execute: npm run commit\n');
+    
+    // Executar apenas até o ponto que mostra os números
+    const commitOutput = execSync(
+      `node ${path.join(__dirname, '../bin/commit-by-type-direct.js')} --show-only`
+    ).toString();
+    
+    console.log(commitOutput);
+    process.exit(0);
+  } catch (error) {
+    console.error('Erro ao executar análise completa:', error.message);
+    process.exit(1);
+  }
+} else if (options.staged) {
   // Para mudanças em stage, usamos um método diferente
   console.log('Analisando mudanças em stage...');
   
