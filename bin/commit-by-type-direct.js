@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Script para agrupar e commitar alterações por tipo no DiffSense
- * Versão com interface melhorada para terminal
+ * Script to group and commit changes by type in DiffSense
+ * Version with improved terminal interface
  */
 
 import { exec } from 'child_process';
@@ -12,17 +12,17 @@ import path from 'path';
 
 const execAsync = promisify(exec);
 
-// Verificar se a opção --show-only foi passada
+// Check if the --show-only option was passed
 const showOnly = process.argv.includes('--show-only');
 
-// Interface para interação com o usuário
+// Interface for user interaction
 const rl = createInterface({
   input: process.stdin,
   output: process.stdout
 });
 
 /**
- * Pergunta ao usuário com promessa de resposta
+ * Ask the user with promise for response
  */
 function question(query) {
   return new Promise(resolve => rl.question(query, resolve));
@@ -64,7 +64,7 @@ function showProgress(message, percent) {
 }
 
 /**
- * Função principal
+ * Main function
  */
 async function commitByType() {
   try {
@@ -72,17 +72,17 @@ async function commitByType() {
     console.log('Analisando repositório...');
     
     // Mostrar barra de progresso enquanto detecta arquivos
-    showProgress('Procurando alterações', 20);
+    showProgress('Looking for changes', 20);
     
-    // Obter arquivos modificados não preparados (unstaged)
+    // Get modified files that are not staged (unstaged)
     const modifiedFiles = await runCommand('git ls-files -m');
     
-    showProgress('Procurando alterações', 40);
+    showProgress('Looking for changes', 40);
     
-    // Obter arquivos não rastreados
+    // Get untracked files
     const untrackedFiles = await runCommand('git ls-files --others --exclude-standard');
     
-    showProgress('Procurando alterações', 60);
+    showProgress('Looking for changes', 60);
     
     // Obter arquivos preparados (staged)
     const stagedFiles = await runCommand('git diff --cached --name-only');
