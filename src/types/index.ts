@@ -171,8 +171,14 @@ export interface RuleHeuristic {
 
 /**
  * Tipos de commit semântico
+ * - feat: novas funcionalidades
+ * - fix: correções de bugs
+ * - docs: alterações em documentação
+ * - refactor: refatorações de código
+ * - test: adição ou modificação de testes
+ * - chore: alterações que não entram no versionamento (configs, scripts, etc)
  */
-export type CommitType = 'feat' | 'fix' | 'chore' | 'docs' | 'style' | 'refactor' | 'perf' | 'test' | 'build' | 'ci' | 'revert';
+export type CommitType = 'feat' | 'fix' | 'docs' | 'refactor' | 'test' | 'chore';
 
 /**
  * Representa uma alteração classificada após a aplicação de regras
