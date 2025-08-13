@@ -1,0 +1,184 @@
+name: Issue Management
+
+on:
+  issues:
+    types: [opened, reopened, labeled, unlabeled, assigned]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, closed, reopened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    steps:
+    - name: Initial issue labeling
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const issue = context.payload.issue;
+          const title = issue.title.toLowerCase();
+          const body = issue.body ? issue.body.toLowerCase() : '';
+          
+          // Auto-label based on title/body keywords
+          let labels = [];
+          
+          if (title.includes('bug') || body.includes('bug') || body.includes('erro') || body.includes('não funciona')) {
+            labels.push('bug');
+          }
+          
+          if (title.includes('feature') || body.includes('feature') || title.includes('recurso') || body.includes('seria bom ter') || body.includes('seria útil')) {
+            labels.push('enhancement');
+          }
+          
+          if (title.includes('documentação') || body.includes('documentação') || body.includes('docs')) {
+            labels.push('documentation');
+          }
+          
+          if (title.includes('ajuda') || title.includes('dúvida') || body.includes('como posso') || body.includes('como fazer')) {
+            labels.push('help wanted');
+          }
+          
+          if (labels.length > 0) {
+            await github.rest.issues.addLabels({
+              issue_number: issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: labels
+            });
+          }
+          
+          // Add welcome comment for new contributors
+          const { data: issuesForUser } = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            creator: issue.user.login,
+            state: 'all'
+          });
+          
+          if (issuesForUser.length <= 1) { // This is their first issue
+            await github.rest.issues.createComment({
+              issue_number: issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Olá @${issue.user.login}! 👋\n\nObrigado por abrir sua primeira issue no DiffSense. Alguém da nossa equipe irá revisar em breve.\n\nEnquanto isso, você pode consultar nosso guia de contribuição se estiver interessado em ajudar no projeto.`
+            });
+          }
+
+  project:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && (github.event.action == 'opened' || github.event.action == 'labeled')
+    steps:
+    - name: Add to project based on label
+      uses: actions/github-script@v6
+      with:
+        script: |
+          // You'll need to replace PROJECT_ID with your actual project ID
+          // For example, for projects in the new GitHub Projects experience
+          // This is a placeholder workflow that would need actual project ID values
+          
+          const issue = context.payload.issue;
+          const labels = issue.labels.map(label => label.name);
+          
+          if (labels.includes('bug')) {
+            // Add to bugs project
+            console.log('Would add to bugs project');
+          }
+          
+          if (labels.includes('enhancement')) {
+            // Add to features project
+            console.log('Would add to features project');
+          }
+  
+  linked_prs:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    steps:
+    - name: Link PR to issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const pr = context.payload.pull_request;
+          const body = pr.body || '';
+          
+          // Look for #123 or "fixes #123" pattern to detect issue references
+          const issueRefs = body.match(/(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)?\s*#(\d+)/gi);
+          
+          if (issueRefs) {
+            for (const ref of issueRefs) {
+              const match = ref.match(/#(\d+)$/);
+              if (match && match[1]) {
+                const issueNumber = match[1];
+                
+                // Add a comment to the referenced issue
+                await github.rest.issues.createComment({
+                  issue_number: issueNumber,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: `Esta issue está sendo trabalhada no PR #${pr.number} por @${pr.user.login}`
+                });
+                
+                // Label the PR with the same labels as the issue
+                try {
+                  const { data: issue } = await github.rest.issues.get({
+                    issue_number: issueNumber,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo
+                  });
+                  
+                  if (issue.labels && issue.labels.length > 0) {
+                    const issueLabels = issue.labels.map(label => label.name);
+                    
+                    await github.rest.issues.addLabels({
+                      issue_number: pr.number,
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      labels: issueLabels
+                    });
+                  }
+                } catch (error) {
+                  console.log(`Error getting issue #${issueNumber}: ${error}`);
+                }
+              }
+            }
+          }
+  
+  closed_issues:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    steps:
+    - name: Close linked issues
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const pr = context.payload.pull_request;
+          const body = pr.body || '';
+          
+          // Extract issue numbers from "fixes #123" or similar syntax
+          const closePatterns = /(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s*#(\d+)/gi;
+          let match;
+          const issuesToClose = [];
+          
+          while ((match = closePatterns.exec(body)) !== null) {
+            if (match[2]) {
+              issuesToClose.push(match[2]);
+            }
+          }
+          
+          // Close each referenced issue
+          for (const issueNumber of issuesToClose) {
+            await github.rest.issues.update({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed'
+            });
+            
+            await github.rest.issues.createComment({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Esta issue foi resolvida e fechada automaticamente pelo PR #${pr.number} (merged).`
+            });
+          }

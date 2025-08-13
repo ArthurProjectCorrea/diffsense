@@ -1,0 +1,21 @@
+# Configuração global para GitHub Actions
+# Este arquivo define permissões e configurações que se aplicam a todos os workflows
+
+# Define permissões padrão para todos os workflows
+permissions:
+  # Para operações básicas de repositório
+  contents: write
+  # Para issues e pull requests
+  issues: write
+  pull-requests: write
+  # Para publicação de pacotes
+  packages: write
+  # Para GitHub Pages (se necessário)
+  pages: write
+  # Para análise de segurança
+  security-events: write
+
+# Configurações padrão para todos os jobs
+defaults:
+  run:
+    shell: bash

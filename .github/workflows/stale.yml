@@ -1,0 +1,33 @@
+name: Mark stale issues and PRs
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Executa diariamente à meia-noite
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    
+    steps:
+    - uses: actions/stale@v8
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        stale-issue-message: 'Esta issue está inativa há 60 dias e será fechada em 10 dias se não houver atividade adicional.'
+        stale-pr-message: 'Este pull request está inativo há 30 dias e será fechado em 10 dias se não houver atividade adicional.'
+        close-issue-message: 'Esta issue foi fechada automaticamente por falta de atividade. Sinta-se à vontade para reabri-la se ainda for relevante.'
+        close-pr-message: 'Este pull request foi fechado automaticamente por falta de atividade. Sinta-se à vontade para reabri-lo se ainda for relevante.'
+        days-before-issue-stale: 60
+        days-before-pr-stale: 30
+        days-before-issue-close: 10
+        days-before-pr-close: 10
+        stale-issue-label: 'status:stale'
+        exempt-issue-labels: 'bug,enhancement,documentation,security,dependencies,help wanted'
+        stale-pr-label: 'status:stale'
+        exempt-pr-labels: 'work-in-progress,waiting-for-review,dependencies'
+        exempt-all-milestones: true
+        exempt-all-assignees: false
+        operations-per-run: 100
+        remove-stale-when-updated: true

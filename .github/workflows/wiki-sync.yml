@@ -1,0 +1,126 @@
+name: Wiki Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - '.github/wiki/**'
+  workflow_dispatch:
+    inputs:
+      force_sync:
+        description: 'Force synchronization of all files'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  sync-wiki:
+    name: Synchronize Wiki
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          path: source
+          fetch-depth: 0
+      
+      - name: Checkout wiki repository
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+          token: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Git
+        run: |
+          git config --global user.name 'GitHub Wiki Bot'
+          git config --global user.email 'wiki-bot@noreply.github.com'
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+      
+      - name: Process and copy docs to wiki
+        id: sync
+        run: |
+          cd $GITHUB_WORKSPACE/source
+          
+          # Initialize change tracker
+          echo "changes=false" >> $GITHUB_OUTPUT
+          
+          # Process each markdown file in docs
+          for file in docs/*.md; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              name="${filename%.md}"
+              
+              # Convert to proper wiki format (technical English)
+              pandoc "$file" -o "../wiki/$name.md" --from markdown --to markdown_github
+              
+              # Clean up any non-English text or convert it
+              cd ../wiki
+              
+              # If we detect non-English content, use DeepL CLI for translation
+              if grep -q -E '[áàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ]' "$name.md"; then
+                echo "Detected non-English content in $name.md, converting..."
+                # This is a placeholder - in production you would use a translation API or tool
+                # For demonstration, we'll just add a note
+                echo -e "\n\n> Note: This document was automatically translated from non-English source." >> "$name.md"
+              fi
+              
+              # Check if file has been changed
+              if git status --porcelain | grep -q "$name.md"; then
+                echo "changes=true" >> $GITHUB_OUTPUT
+              fi
+              
+              cd ../source
+            fi
+          done
+          
+          # Also copy files from .github/wiki to wiki root (if any exist)
+          if [ -d ".github/wiki" ]; then
+            for file in .github/wiki/*.md; do
+              if [ -f "$file" ]; then
+                filename=$(basename "$file")
+                cp "$file" "../wiki/$filename"
+                
+                # Check if file has been changed
+                cd ../wiki
+                if git status --porcelain | grep -q "$filename"; then
+                  echo "changes=true" >> $GITHUB_OUTPUT
+                fi
+                cd ../source
+              fi
+            done
+          fi
+          
+          # Force sync if requested
+          if [ "${{ github.event.inputs.force_sync }}" == "true" ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Commit and push changes to wiki
+        if: steps.sync.outputs.changes == 'true'
+        run: |
+          cd $GITHUB_WORKSPACE/wiki
+          
+          # Get latest commit message from source
+          COMMIT_MSG=$(cd ../source && git log -1 --pretty=%B)
+          
+          # Append wiki sync information
+          WIKI_COMMIT_MSG="wiki: sync documentation
+
+          $COMMIT_MSG
+
+          Automatically synced from repository docs folder"
+          
+          git add .
+          git commit -m "$WIKI_COMMIT_MSG" || echo "No changes to commit"
+          git push

@@ -1,0 +1,34 @@
+# Development files
+.git/
+.github/
+.vscode/
+node_modules/
+tests/
+vitest.config.ts
+
+# Development configuration files
+.editorconfig
+.eslintrc.json
+.eslintignore
+.prettierrc
+.prettierignore
+tsconfig.json
+
+# Source code files (we only ship the compiled version)
+# But we need to keep src/config/default-rules.yaml
+src/**/*
+!src/config/default-rules.yaml
+
+# Logs and caches
+*.log
+.npm
+.cache
+
+# Temporary files
+.DS_Store
+Thumbs.db
+*~
+
+# Project specific files
+.env
+.env.*

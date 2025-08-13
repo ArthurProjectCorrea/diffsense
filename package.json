@@ -1,7 +1,8 @@
 {
-  "name": "diffsense",
-  "version": "0.1.0",
+  "name": "@arthurcorreadev/diffsense",
+  "version": "1.0.0",
   "description": "Framework inteligente para análise de alterações em código e commits semânticos automáticos.",
+  "homepage": "https://github.com/ArthurProjectCorrea/diffsense#readme",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,14 +18,34 @@
     "analyze": "node bin/analyze-working-dir.js",
     "commit-by-type": "node bin/commit-by-type.js",
     "commit": "node bin/commit-by-type-direct.js",
+    "suggest-commit": "node scripts/suggest-commit.js",
     "dev": "ts-node --esm src/cli/index.ts run",
     "test": "vitest",
-    "prepare": "npm run build"
+    "test:ci": "vitest run tests/ci-basic.test.ts",
+    "test:install": "node scripts/test-install.js",
+    "lint": "eslint . --ext .ts --max-warnings 100",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "check-types": "tsc --noEmit",
+    "ci": "npm run lint && npm run check-types && npm run test:ci",
+    "prepare": "npm run build",
+    "postinstall": "node scripts/postinstall.js",
+    "prepublishOnly": "npm run ci && npm run build",
+    "preversion": "npm run ci",
+    "version": "npm run build",
+    "postversion": "git push && git push --tags",
+    "setup-tokens": "node scripts/setup-tokens.js",
+    "config": "node scripts/setup-tokens.js",
+    "coverage": "vitest run --coverage",
+    "setup-github-secrets": "node scripts/setup-github-secrets.js"
   },
   "files": [
     "dist/",
     "bin/",
-    "src/config/default-rules.yaml"
+    "src/config/default-rules.yaml",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "docs/"
   ],
   "repository": {
     "type": "git",
@@ -36,15 +57,24 @@
     "commit",
     "semantic-commit",
     "analysis",
-    "typescript"
+    "typescript",
+    "conventional-commits",
+    "code-analysis",
+    "semantic-versioning",
+    "ast",
+    "developer-tools",
+    "commit-by-type"
   ],
   "author": "Arthur Correa",
   "license": "MIT",
   "devDependencies": {
     "@types/minimatch": "^5.1.2",
     "@types/node": "^20.10.5",
-    "typescript": "^5.6.3",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
     "ts-node": "^10.9.1",
+    "typescript": "^5.6.3",
     "vitest": "^1.0.0"
   },
   "dependencies": {
@@ -57,5 +87,11 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/ArthurProjectCorrea/diffsense/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
