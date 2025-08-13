@@ -144,27 +144,26 @@ npm run commit
 DiffSense oferece a funcionalidade de agrupar e commitar alterações por seu tipo semântico:
 
 ```bash
-# Usando o script com integração completa ao DiffSense
-npm run commit-by-type
-
-# Usando a versão direta (mais rápida)
+# Usando a versão com interface melhorada (recomendada)
 npm run commit
+
+# Usando a versão com integração completa ao DiffSense
+npm run commit-by-type
 ```
 
 Este recurso:
 
-1. Analisa as alterações não commitadas
-2. Classifica os arquivos por tipo semântico:
+1. Analisa as alterações não commitadas com uma interface amigável
+2. Classifica os arquivos automaticamente por tipo semântico:
    - `feat`: Novas funcionalidades e implementações
    - `fix`: Correções de bugs e problemas
    - `docs`: Documentação e comentários
    - `test`: Testes unitários e de integração
    - `chore`: Configurações, dependências e arquivos de suporte
    - `style`: Arquivos de estilo (CSS, SCSS)
-3. Permite que você revise e edite as mensagens de commit para cada tipo
-4. Realiza commits separados para cada categoria
+3. Cria commits separados para cada categoria com mensagens semânticas
 
-Isso mantém um histórico de commits mais limpo, semântico e organizado, facilitando a revisão de código e a geração de changelogs.
+A interface inclui barras de progresso visuais e um fluxo simplificado para uma experiência de desenvolvimento mais agradável. Isso mantém um histórico de commits mais limpo, semântico e organizado, facilitando a revisão de código e a geração de changelogs.
 
 ## Requisitos
 
