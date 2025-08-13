@@ -3,3 +3,7 @@ dist/
 coverage/
 .env
 *.log
+
+# pnpm específico
+.pnpm-store/
+.pnpm-debug.log
