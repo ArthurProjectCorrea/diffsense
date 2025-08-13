@@ -49,7 +49,7 @@ export interface ISemanticAnalysis {
     addedExports?: string[];
     removedExports?: string[];
     modifiedExports?: string[];
-    [key: string]: any;
+    [key: string]: string[] | string | number | boolean | object | undefined;
   };
 }
 
@@ -100,7 +100,7 @@ export interface ChangeMetadata {
   isBinary?: boolean;
   
   /** Dados adicionais específicos ao tipo de arquivo */
-  extraData?: Record<string, any>;
+  extraData?: Record<string, string | number | boolean | object | undefined>;
 }
 
 /**
@@ -292,12 +292,12 @@ export interface AnalysisOptions {
   
   /** Opções específicas para cada módulo */
   modules?: {
-    changeDetector?: Record<string, any>;
-    contextCorrelator?: Record<string, any>;
-    semanticAnalyzer?: Record<string, any>;
-    rulesEngine?: Record<string, any>;
-    scoring?: Record<string, any>;
-    reporter?: Record<string, any>;
+    changeDetector?: Record<string, unknown>;
+    contextCorrelator?: Record<string, unknown>;
+    semanticAnalyzer?: Record<string, unknown>;
+    rulesEngine?: Record<string, unknown>;
+    scoring?: Record<string, unknown>;
+    reporter?: Record<string, unknown>;
   };
 }
 

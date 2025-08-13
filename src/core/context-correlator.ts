@@ -1,4 +1,4 @@
-import { Project, SourceFile } from 'ts-morph';
+import { Project } from 'ts-morph';
 import * as path from 'path';
 import { Change, ContextualizedChange, Dependency, CodeHunk } from '../types/index.js';
 import { DependencyGraph } from './dependency-graph.js';
@@ -21,7 +21,10 @@ export class ContextCorrelator {
   /**
    * Correlaciona contextos entre arquivos e enriquece informações sobre mudanças
    */
-  async correlateChanges(changes: Change[], graph?: any): Promise<ContextualizedChange[]> {
+  async correlateChanges(
+    changes: Change[], 
+    graph?: Record<string, Record<string, Dependency>>
+  ): Promise<ContextualizedChange[]> {
     console.log('Correlacionando contexto entre mudanças...');
     
     // Adicionar os arquivos ao projeto ts-morph
@@ -70,7 +73,10 @@ export class ContextCorrelator {
   /**
    * Contextualiza uma mudança com informações adicionais
    */
-  private contextualizeChange(change: Change, graph: any): ContextualizedChange {
+  private contextualizeChange(
+    change: Change, 
+    graph: Record<string, Record<string, Dependency>>
+  ): ContextualizedChange {
     // Extrair hunks (trechos modificados) do código
     const hunks = this.extractHunks(change);
     
@@ -127,7 +133,10 @@ export class ContextCorrelator {
   /**
    * Encontra arquivos relacionados a um arquivo específico
    */
-  private findRelatedFiles(filePath: string, graph: any): string[] {
+  private findRelatedFiles(
+    filePath: string, 
+    graph: Record<string, Record<string, Dependency>>
+  ): string[] {
     // Se o arquivo estiver no grafo, retorne os arquivos relacionados
     if (graph && graph[filePath]) {
       return Object.keys(graph[filePath]);

@@ -11,7 +11,8 @@ import {
   SemanticChange,
   ChangeType,
   SemanticChangeType,
-  Rule
+  Rule,
+  FileChange
 } from './types/index.js';
 import path from 'path';
 
@@ -57,11 +58,11 @@ export async function runAnalysis(
     // Converter para o formato FileChange esperado pelo novo SemanticAnalyzer
     const fileChanges = contextualizedChanges.map(change => ({
       path: change.filePath,
-      status: change.type as any, // Compatibilidade de tipos
+      status: change.type as FileChange['status'], // Tipagem correta
       previousPath: ''
     }));
     
-    const analyzedChanges = await semanticAnalyzer.analyzeChanges(fileChanges as any);
+    const analyzedChanges = await semanticAnalyzer.analyzeChanges(fileChanges);
     
     // 4. Apply classification rules
     const rulesEngine = new RulesEngine(options.configPath);

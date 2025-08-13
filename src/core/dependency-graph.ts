@@ -73,7 +73,7 @@ export class DependencyGraph {
       
       classes.forEach(classDecl => {
         try {
-          const className = classDecl.getName() || 'AnonymousClass';
+          const _className = classDecl.getName() || 'AnonymousClass';
           
           // Verificar herança
           const heritageClauses = classDecl.getHeritageClauses();
@@ -126,7 +126,7 @@ export class DependencyGraph {
     const dependenciesMap = this.analyzeDependencies();
     const graph: Record<string, Record<string, Dependency>> = {};
     
-    dependenciesMap.forEach((deps, file) => {
+    dependenciesMap.forEach((deps, _file) => {
       deps.forEach(dep => {
         if (!graph[dep.to]) {
           graph[dep.to] = {};

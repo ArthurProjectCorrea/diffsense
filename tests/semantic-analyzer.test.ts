@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SemanticAnalyzer } from '../src/core/semantic-analyzer';
 import { IConfiguration } from '../src/config/configuration';
-import path from 'path';
+import _path from 'path';
 import { FileChange } from '../src/types';
-import * as fs from 'fs';
+import * as _fs from 'fs';
 
 // Mock ts-morph
 vi.mock('ts-morph', async () => {

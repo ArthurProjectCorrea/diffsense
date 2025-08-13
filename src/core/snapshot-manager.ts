@@ -106,9 +106,10 @@ export class SnapshotManager {
       );
       
       return snapshot;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Erro ao criar snapshot para ${ref}:`, error);
-      throw new Error(`Falha ao criar snapshot: ${error?.message || 'Erro desconhecido'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      throw new Error(`Falha ao criar snapshot: ${errorMessage}`);
     }
   }
   

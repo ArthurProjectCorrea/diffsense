@@ -50,7 +50,7 @@ program
       
       // If auto-commit option is enabled, create commit
       if (opts.autoCommit && result.suggestedCommit) {
-        const { type, scope, subject, breaking, body } = result.suggestedCommit;
+        const { type, scope, subject, breaking, _body } = result.suggestedCommit;
         
         // Auto-commit implementation
         // (would require git access, omitted in this version)
