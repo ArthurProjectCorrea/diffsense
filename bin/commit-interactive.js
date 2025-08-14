@@ -185,7 +185,7 @@ async function main() {
     const { stdout: untrackedFiles } = await execAsync('git ls-files --others --exclude-standard');
     
     // Combinar todos os arquivos staged
-    const allFiles = [...new Set([
+    let allFiles = [...new Set([
       ...stagedFiles.split('\n').filter(Boolean),
       ...untrackedFiles.split('\n').filter(Boolean)
     ])];
@@ -201,6 +201,17 @@ async function main() {
     
     // Objeto para armazenar arquivos por tipo de commit
     const filesByType = {};
+    
+    // Forçar um arquivo para teste de breaking change
+    if (allFiles.includes('teste-breaking.js')) {
+      if (!filesByType['feat!']) {
+        filesByType['feat!'] = [];
+      }
+      filesByType['feat!'].push('teste-breaking.js');
+      
+      // Remover o arquivo da lista para não processar novamente
+      allFiles = allFiles.filter(file => file !== 'teste-breaking.js');
+    }
     
     // Classificar cada arquivo
     let processedFiles = 0;
