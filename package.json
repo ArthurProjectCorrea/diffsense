@@ -13,6 +13,7 @@
     "build": "tsc",
     "start": "node bin/diffsense.js",
     "analyze": "node bin/diffsense.js run",
+    "analyzer": "node bin/analyzer.js",
     "dev": "pnpm exec ts-node --esm src/cli/index.ts run",
     "commit": "node bin/commit-interactive-enhanced.js",
     "commit:legacy": "node bin/commit-interactive.js",
