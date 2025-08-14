@@ -15,8 +15,8 @@ export type AnyCommitType = CommitType | BreakingCommitType;
 
 // Definir pesos para os diferentes tipos de commit
 export const TYPE_WEIGHTS: Record<string, number> = {
-  'feat!': 100,  // Breaking changes têm o maior peso
-  'fix!': 90,    // Correções com breaking changes
+  'feat!': 100,  // Breaking changes têm o maior peso - prioridade máxima
+  'fix!': 90,    // Correções com breaking changes - muito importante
   'feat': 80,    // Novas funcionalidades
   'fix': 70,     // Correções
   'docs': 60,    // Documentação
