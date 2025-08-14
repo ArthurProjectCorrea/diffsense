@@ -1,31 +1,36 @@
-# DiffSense Documentation
+# DiffSense Wiki
 
 ## Getting Started
 * [Home](Home)
 * [Quick Start Guide](Quick-Start-Guide)
 * [Installation](Installation)
-* [Changelog](Changelog)
-
-## Core Documentation
-* [Arquitetura](Arquitetura)
-* [Publicação](Publicação)
-* [Configuração de Secrets](Configuração-de-Secrets)
-* [Secret Configuration](Secret-Configuration)
-* [Permissões GitHub](Permissões-GitHub)
-
-## Advanced Topics
-* [Custom Rules](Custom-Rules)
-* [Semantic Analysis](Semantic-Analysis)
-* [Semantic Commits](Semantic-Commits)
-* [CI/CD Integration](CI-CD-Integration)
-
-## Development
-* [Contributing](Contributing)
-* [Code of Conduct](Code-of-Conduct)
-* [Development Setup](Development-Setup)
-
-## Examples
 * [Basic Usage](Basic-Usage)
+
+## Architecture
+* [System Architecture](Architecture/System-Architecture)
+* [Core Components](Architecture/Core-Components)
+* [Data Flow](Architecture/Data-Flow)
+
+## User Guide
+* [CLI Commands](User-Guide/CLI-Commands)
+* [Configuration Options](User-Guide/Configuration-Options)
+* [Semantic Commits](User-Guide/Semantic-Commits)
+
+## Advanced Usage
+* [Custom Rules](Advanced/Custom-Rules)
+* [CI/CD Integration](Advanced/CI-CD-Integration)
+* [API Integration](Advanced/API-Integration)
 * [Commit By Type](Commit-By-Type)
-* [API Integration](API-Integration)
+
+## Developer Guide
+* [Contributing](Developer-Guide/Contributing)
+* [Development Setup](Developer-Guide/Development-Setup)
+* [Code Style](Developer-Guide/Code-Style)
+* [Testing](Developer-Guide/Testing)
+
+## Project
+* [Changelog](Project/Changelog)
+* [Release Process](Project/Release-Process)
+* [Code of Conduct](Project/Code-of-Conduct)
+* [Wiki Management](Project/Wiki-Management)
 * [Code Examples](Examples)
