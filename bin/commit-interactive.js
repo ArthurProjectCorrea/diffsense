@@ -7,9 +7,17 @@
 
 import { exec, execSync } from 'child_process';
 import { promisify } from 'util';
-import { createInterface } from 'readline';
 import path from 'path';
 import fs from 'fs/promises';
+
+// Bibliotecas para interface de terminal
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import ora from 'ora';
+import boxen from 'boxen';
+import Table from 'cli-table3';
+import gradient from 'gradient-string';
+import Listr from 'listr';
 
 const execAsync = promisify(exec);
 
@@ -24,6 +32,18 @@ const TYPE_WEIGHTS = {
   'refactor': 50, // Refatoração
   'test': 40,    // Testes
   'chore': 30    // Manutenção
+};
+
+// Temas de cores para tipos de commit
+const TYPE_COLORS = {
+  'feat!': 'red',
+  'fix!': 'red',
+  'feat': 'green',
+  'fix': 'yellow',
+  'docs': 'blue',
+  'refactor': 'magenta',
+  'test': 'cyan',
+  'chore': 'gray'
 };
 
 // Lista de padrões de arquivos irrelevantes para o versionamento semântico
@@ -71,34 +91,19 @@ const NON_VERSIONING_FILES = [
   '.editorconfig',
 ];
 
-// Cores para terminal
-const COLORS = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  underscore: '\x1b[4m',
-  blink: '\x1b[5m',
-  reverse: '\x1b[7m',
-  hidden: '\x1b[8m',
-  
-  black: '\x1b[30m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m',
-  white: '\x1b[37m',
-  
-  bgBlack: '\x1b[40m',
-  bgRed: '\x1b[41m',
-  bgGreen: '\x1b[42m',
-  bgYellow: '\x1b[43m',
-  bgBlue: '\x1b[44m',
-  bgMagenta: '\x1b[45m',
-  bgCyan: '\x1b[46m',
-  bgWhite: '\x1b[47m'
+// Configurações do boxen para cabeçalhos
+const boxenOptions = {
+  padding: 1,
+  margin: 1,
+  borderStyle: 'round',
+  borderColor: 'blue',
+  backgroundColor: '#222'
 };
+
+// Função para exibir seção com destaque
+function displaySection(title) {
+  console.log('\n' + chalk.bold.underline(title));
+}
 
 // Interface de leitura para input do usuário
 const readline = createInterface({
@@ -131,33 +136,45 @@ function isRelevantForVersioning(filePath) {
   return true;
 }
 
-// Função para criar uma barra de progresso
-function createProgressBar(total, current, barSize = 30) {
-  const percentage = Math.floor((current / total) * 100);
-  const filledSize = Math.floor((current / total) * barSize);
-  const emptySize = barSize - filledSize;
-  
-  const filledBar = '█'.repeat(filledSize);
-  const emptyBar = '░'.repeat(emptySize);
-  
-  return `[${filledBar}${emptyBar}] ${percentage}%`;
-}
-
 // Função para exibir cabeçalho
 function showHeader() {
-  console.log('\n╭───────────────────────────────────────╮');
-  console.log('│       DiffSense - Commit Interativo    │');
-  console.log('╰───────────────────────────────────────╯\n');
-  console.log('🔍 DiffSense - Commit Interativo\n');
+  const packageInfo = JSON.parse(execSync('npm pkg get name version description', { encoding: 'utf8' }));
+  const name = packageInfo.name.replace(/["@a-z\/]+\//, '').toUpperCase();
+  const version = packageInfo.version.replace(/"/g, '');
+  
+  const headerText = gradient.mind(`
+   ${name} v${version}
+    
+   COMMIT INTERATIVO
+  `);
+  
+  console.log(boxen(headerText, boxenOptions));
 }
 
-// Função para fazer pergunta ao usuário e obter resposta
-function ask(question) {
-  return new Promise(resolve => {
-    readline.question(question, answer => {
-      resolve(answer);
-    });
-  });
+// Função para fazer pergunta ao usuário com inquirer
+async function ask(question, defaultValue = '') {
+  const { answer } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'answer',
+      message: question,
+      default: defaultValue
+    }
+  ]);
+  return answer;
+}
+
+// Função para perguntar confirmação
+async function confirm(question, defaultValue = true) {
+  const { confirmed } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'confirmed',
+      message: question,
+      default: defaultValue
+    }
+  ]);
+  return confirmed;
 }
 
 // Função principal
@@ -165,39 +182,84 @@ async function main() {
   try {
     showHeader();
     
-    console.log('Analisando repositório...');
+    // Iniciar análise do repositório
+    const repoSpinner = ora('Analisando repositório...').start();
     
     // Verificar status do git
     const { stdout: gitStatus } = await execAsync('git status --porcelain');
     if (!gitStatus.trim()) {
-      console.log(colorize('✅ Não há alterações para commitar.', COLORS.green));
-      readline.close();
+      repoSpinner.fail('Não há alterações para commitar.');
       return;
     }
     
-    // Adicionar todos os arquivos automaticamente (sempre executar git add .)
-    console.log('Adicionando todos os arquivos ao stage...');
-    await execAsync('git add .');
+    repoSpinner.succeed('Repositório analisado');
     
-    // Obter arquivos modificados após o git add .
-    console.log('Procurando alterações', createProgressBar(100, 50));
-    const { stdout: stagedFiles } = await execAsync('git diff --cached --name-only');
-    const { stdout: untrackedFiles } = await execAsync('git ls-files --others --exclude-standard');
+    // Executar tarefas em sequência
+    const tasks = new Listr([
+      {
+        title: 'Adicionando arquivos ao stage',
+        task: () => execAsync('git add .')
+      },
+      {
+        title: 'Identificando alterações',
+        async task(ctx) {
+          const { stdout: stagedFiles } = await execAsync('git diff --cached --name-only');
+          const { stdout: untrackedFiles } = await execAsync('git ls-files --others --exclude-standard');
+          
+          ctx.allFiles = [...new Set([
+            ...stagedFiles.split('\n').filter(Boolean),
+            ...untrackedFiles.split('\n').filter(Boolean)
+          ])];
+          
+          return new Listr([
+            {
+              title: `Encontrados ${ctx.allFiles.length} arquivos`,
+              task: () => {}
+            }
+          ]);
+        }
+      }
+    ]);
     
-    // Combinar todos os arquivos staged
-    let allFiles = [...new Set([
-      ...stagedFiles.split('\n').filter(Boolean),
-      ...untrackedFiles.split('\n').filter(Boolean)
-    ])];
+    // Executar tarefas
+    const context = await tasks.run();
+    const allFiles = context.allFiles;
     
-    console.log(createProgressBar(100, 100));
-    console.log(`\n✅ Encontradas ${allFiles.length} alterações no repositório.`);
+    // Exibir arquivos encontrados
+    displaySection('Arquivos detectados');
     
-    // Classificar os arquivos por tipo
-    console.log('Classificando alterações', createProgressBar(100, 0));
+    if (allFiles.length > 0) {
+      const fileTable = new Table({
+        head: [chalk.blue('#'), chalk.blue('Arquivo')],
+        colWidths: [5, 70]
+      });
+      
+      allFiles.forEach((file, index) => {
+        fileTable.push([index + 1, file]);
+      });
+      
+      console.log(fileTable.toString());
+    } else {
+      console.log(chalk.yellow('Nenhum arquivo encontrado para commit.'));
+      return;
+    }
     
-    console.log(`Arquivos encontrados: ${allFiles.length}`);
-    allFiles.forEach(file => console.log(file));
+    // Iniciar classificação
+    const analyzeSpinner = ora('Analisando e classificando alterações...').start();
+    
+    // Objeto para armazenar arquivos por tipo de commit
+    const filesByType = {};
+    
+    // Forçar um arquivo para teste de breaking change
+    if (allFiles.includes('teste-breaking.js')) {
+      if (!filesByType['feat!']) {
+        filesByType['feat!'] = [];
+      }
+      filesByType['feat!'].push('teste-breaking.js');
+      
+      // Remover o arquivo da lista para não processar novamente
+      allFiles = allFiles.filter(file => file !== 'teste-breaking.js');
+    }
     
     // Objeto para armazenar arquivos por tipo de commit
     const filesByType = {};
@@ -281,52 +343,53 @@ async function main() {
       filesByType[bestType].push(file);
       
       processedFiles++;
-      console.log('Classificando alterações', createProgressBar(allFiles.length, processedFiles));
+      console.log(colorize('Analisando alterações...', COLORS.yellow), showProgress(allFiles.length, processedFiles));
     }
     
-    console.log('\n⚖️ Aplicando sistema de pesos para classificação final...\n');
+    console.log('\n' + colorize('Classificação concluída', COLORS.green) + '\n');
     
     // Contar o número total de tipos encontrados
     const typeCount = Object.keys(filesByType).length;
     
     // Exibir um sumário das classificações
-    console.log('📊 Alterações classificadas por tipo:');
+    console.log(colorize('Alterações por tipo:', COLORS.cyan));
     
     const typeCounts = Object.entries(filesByType).map(([type, files]) => {
       return { type, count: files.length, files };
     });
     
     // Criar um sumário de tipos
-    const typesList = typeCounts.map(({ type, count }) => `${type}: ${count}`).join(', ');
-    console.log(`   ${typesList}`);
+    const typesList = typeCounts.map(({ type, count }) => 
+      `${colorize(type, COLORS.yellow)}: ${colorize(count.toString(), COLORS.white)}`).join(', ');
+    console.log(`${typesList}`);
     
     // Detalhes dos arquivos por tipo
     typeCounts.forEach(({ type, files }) => {
       const fileList = files.length <= 3 
         ? files.join(', ')
-        : `${files.slice(0, 3).join(', ')}... e outros ${files.length - 3}`;
-      console.log(`   • ${type} (${files.length}): ${fileList}`);
+        : `${files.slice(0, 3).join(', ')}... e mais ${files.length - 3}`;
+      console.log(`   ${colorize('▪', COLORS.blue)} ${colorize(type, COLORS.yellow)} (${files.length})`);
     });
     
     // Perguntar se deseja fazer o commit das alterações
-    const shouldCommit = await ask('\nDeseja fazer o commit das alterações? (S/n): ');
+    const shouldCommit = await ask('\n' + colorize('Confirmar commits? (S/n): ', COLORS.cyan));
     if (shouldCommit.toLowerCase() === 'n') {
-      console.log('Operação cancelada pelo usuário.');
+      console.log(colorize('Operação cancelada pelo usuário.', COLORS.red));
       readline.close();
       return;
     }
     
-    console.log('\n🚀 Iniciando processo de commits...');
+    console.log('\n' + colorize('Iniciando processo de commits...', COLORS.green));
     
     // Processar cada tipo de commit
     let commitCount = 0;
     for (const { type, files } of typeCounts) {
       commitCount++;
-      console.log(`Processando commits (${commitCount}/${typeCounts.length})`, 
-                 createProgressBar(typeCounts.length, commitCount));
+      console.log(colorize(`Processando commit ${commitCount}/${typeCounts.length}`, COLORS.blue), 
+                 showProgress(typeCounts.length, commitCount));
       
       const isBreakingChange = type.includes('!');
-      console.log(`\n📦 Commit ${commitCount}/${typeCounts.length}: ${type.toUpperCase()} (${files.length} arquivos)`);
+      console.log(`\n${colorize(`Commit ${commitCount}/${typeCounts.length}:`, COLORS.magenta)} ${colorize(type.toUpperCase(), COLORS.yellow)} (${files.length} arquivos)`);
       
       // Gerar staged files para esse tipo (resetar primeiro, depois adicionar apenas os arquivos desse tipo)
       await execAsync('git reset HEAD -- .');
@@ -339,25 +402,25 @@ async function main() {
       let commitMessage;
       
       if (isBreakingChange) {
-        console.log(`Formato: ${type}: descrição do commit (max ${maxDescLength} caracteres)`);
-        const description = await ask(`Descrição para ${type} (máx ${maxDescLength} caracteres): `);
+        console.log(colorize(`Formato: ${type}: descrição do commit (max ${maxDescLength} caracteres)`, COLORS.white));
+        const description = await ask(colorize(`Descrição para ${type}: `, COLORS.cyan));
         
         if (description.length > maxDescLength) {
-          console.log(colorize(`⚠️ Aviso: Descrição truncada para ${maxDescLength} caracteres.`, COLORS.yellow));
+          console.log(colorize(`Aviso: Descrição truncada para ${maxDescLength} caracteres.`, COLORS.yellow));
         }
         
         const trimmedDesc = description.substring(0, maxDescLength);
         
-        console.log(`\nBREAKING CHANGE: detalhe da mudança que quebra compatibilidade:`);
-        const breakingDetail = await ask('Detalhes da breaking change: ');
+        console.log(colorize('\nBREAKING CHANGE: detalhe da mudança que quebra compatibilidade:', COLORS.red));
+        const breakingDetail = await ask(colorize('Detalhes: ', COLORS.cyan));
         
         commitMessage = `${type}: ${trimmedDesc}\n\nBREAKING CHANGE: ${breakingDetail}`;
       } else {
-        console.log(`Formato: ${type}: descrição do commit (max ${maxDescLength} caracteres)`);
-        const description = await ask(`Descrição para ${type} (máx ${maxDescLength} caracteres): `);
+        console.log(colorize(`Formato: ${type}: descrição do commit (max ${maxDescLength} caracteres)`, COLORS.white));
+        const description = await ask(colorize(`Descrição para ${type}: `, COLORS.cyan));
         
         if (description.length > maxDescLength) {
-          console.log(colorize(`⚠️ Aviso: Descrição truncada para ${maxDescLength} caracteres.`, COLORS.yellow));
+          console.log(colorize(`Aviso: Descrição truncada para ${maxDescLength} caracteres.`, COLORS.yellow));
         }
         
         const trimmedDesc = description.substring(0, maxDescLength);
@@ -365,7 +428,7 @@ async function main() {
       }
       
       // Executar o commit
-      console.log(`> git commit com mensagem personalizada`);
+      console.log(colorize(`Commitando alterações...`, COLORS.blue));
       
       try {
         // Salvar a mensagem em um arquivo temporário para preservar formatação e quebras de linha
@@ -373,22 +436,22 @@ async function main() {
         await fs.writeFile(tempFile, commitMessage, 'utf8');
         
         // Usar o arquivo temporário para o commit
-        execSync(`git commit -F "${tempFile}"`, { stdio: 'inherit' });
+        execSync(`git commit -F "${tempFile}"`, { stdio: 'pipe' });
         
         // Remover o arquivo temporário após o commit
         await fs.unlink(tempFile).catch(() => {});
         
-        console.log(colorize(`   ✅ Commit realizado com sucesso!`, COLORS.green));
+        console.log(colorize(`Commit realizado com sucesso!`, COLORS.green));
       } catch (error) {
-        console.error(colorize(`   ❌ Erro ao realizar commit: ${error.message}`, COLORS.red));
+        console.error(colorize(`Erro ao realizar commit: ${error.message}`, COLORS.red));
       }
     }
     
-    console.log('\n✨ Processo de commits concluído com sucesso!\n');
-    console.log('👋 Obrigado por usar o DiffSense Commit Interativo!');
+    console.log('\n' + colorize('Commits finalizados com sucesso!', COLORS.green) + '\n');
+    console.log(colorize('DiffSense Commit Interativo', COLORS.blue));
     
   } catch (error) {
-    console.error(colorize(`❌ Erro: ${error.message}`, COLORS.red));
+    console.error(colorize(`Erro: ${error.message}`, COLORS.red));
   } finally {
     readline.close();
   }
@@ -396,6 +459,6 @@ async function main() {
 
 // Executar função principal
 main().catch(error => {
-  console.error(colorize(`❌ Erro fatal: ${error.message}`, COLORS.red));
+  console.error(colorize(`Erro fatal: ${error.message}`, COLORS.red));
   process.exit(1);
 });
