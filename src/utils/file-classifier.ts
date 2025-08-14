@@ -119,6 +119,9 @@ export async function classifyFile(filePath: string): Promise<AnyCommitType> {
   } else if (filePath.match(/\.(spec|test)\.(js|ts|jsx|tsx)$/i) || filePath.match(/tests?\//i)) {
     // Arquivos de teste
     return 'test';
+  } else if (filePath.match(/features\//i) || filePath.match(/\/features\//i)) {
+    // Arquivos na pasta features são sempre novas funcionalidades
+    return 'feat';
   } else if (filePath.match(/\.(js|ts|jsx|tsx|vue|svelte)$/i)) {
     // Verificar se o arquivo é novo (não rastreado)
     try {
