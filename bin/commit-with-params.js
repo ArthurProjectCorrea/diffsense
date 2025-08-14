@@ -2,7 +2,17 @@
 
 /**
  * Script para commit direto e interativo no DiffSense
- * Permite especificar o tipo de commit e descrição via argumentos de linha de comando
+ * Permite especificar o tipo de commit e descrição via argumentos de lin  console.log('\n' + chalk.bold('Uso básico:'));
+  console.log('  pnpm commit                         - Inicia o assistente de commit interativo');
+  console.log('  (Nota: O comando sempre executa "git add ." automaticamente)');
+  
+  console.log('\n' + chalk.bold('Commit direto com tipo e descrição:'));
+  console.log('  pnpm commit --feat "nova feature"   - Commit direto do tipo feat');
+  console.log('  pnpm commit --fix "correção bug"    - Commit direto do tipo fix');
+  
+  console.log('\n' + chalk.bold('Múltiplos commits em uma única execução:'));
+  console.log('  pnpm commit --feat "nova API" --fix "erro 404" --docs "atualização"  - Commits sequenciais de diferentes tipos');
+  omando
  * 
  * Formatos suportados:
  * - pnpm commit --type "descrição do commit"
@@ -72,7 +82,9 @@ const boxenOptions = {
 // Função para processar argumentos da linha de comando
 function parseArguments() {
   const args = process.argv.slice(2);
-  const params = {};
+  const params = {
+    commitTypes: [] // Array para armazenar múltiplos tipos de commit e suas descrições
+  };
 
   // Verificar argumentos no formato --type "descrição"
   // IMPORTANTE: Esses tipos DEVEM corresponder exatamente aos mesmos tipos que o classificador suporta
@@ -88,7 +100,7 @@ function parseArguments() {
     showHelp();
   }
   
-  // Verificar se o usuário quer parar após o primeiro commit
+  // Verificar se o usuário quer parar após os commits
   if (args.includes('--stop') || args.includes('-s')) {
     params.stopAfterCommit = true;
     // Remover os argumentos --stop/-s para não interferir no processamento
@@ -121,14 +133,18 @@ function parseArguments() {
       if (validTypes.includes(type)) {
         // Verificar se existe próximo argumento como descrição
         if (i + 1 < args.length && !args[i + 1].startsWith('--')) {
-          params.type = type;
           // Remover possíveis aspas da descrição
-          params.description = args[i + 1].replace(/^"|"$/g, '').replace(/^['']|['']$/g, '');
-          console.log(`\n${chalk.bold('Commit direto:')} ${TYPE_COLORS[type] ? TYPE_COLORS[type](type) : chalk.white(type)} "${chalk.italic(params.description)}"`);
+          const description = args[i + 1].replace(/^"|"$/g, '').replace(/^['']|['']$/g, '');
+          
+          // Adicionar ao array de tipos de commit
+          params.commitTypes.push({ type, description });
+          
+          console.log(`${chalk.bold('Commit solicitado:')} ${TYPE_COLORS[type] ? TYPE_COLORS[type](type) : chalk.white(type)} "${chalk.italic(description)}"`);
+          
           i++; // Pular o próximo argumento já processado
         } else {
-          // Se não tiver descrição, apenas registrar o tipo
-          params.type = type;
+          // Se não tiver descrição, apenas registrar o tipo para interação posterior
+          params.type = type; // Manter a compatibilidade com o código existente
           console.log(`\n${chalk.bold('Tipo pré-selecionado:')} ${TYPE_COLORS[type] ? TYPE_COLORS[type](type) : chalk.white(type)} - ${chalk.italic('aguardando descrição interativa...')}`);
         }
       }
@@ -175,7 +191,8 @@ function showHelp() {
   
   console.log(chalk.bold('Exemplos com combinação de opções:'));
   console.log('  pnpm commit --feat "nova API" --stop        - Commit apenas do tipo feat e encerra');
-  console.log('  pnpm commit --fix! "correção crítica" --stop - Commit de breaking change fix e encerra\n');
+  console.log('  pnpm commit --fix! "correção crítica" --stop - Commit de breaking change fix e encerra');
+  console.log('  pnpm commit --feat "nova API" --fix "bug" --stop - Múltiplos commits de diferentes tipos e encerra\n');
   
   process.exit(0);
 }
@@ -251,8 +268,12 @@ async function main() {
     const preSelectedType = args.type;
     const preSelectedDescription = args.description;
     const stopAfterCommit = args.stopAfterCommit;
+    const multipleCommitTypes = args.commitTypes || []; // Obter os múltiplos tipos de commit
     
     showHeader();
+    
+    // Alerta sobre o comportamento de git add automático
+    console.log(chalk.cyan('\n⚠️ Aviso: Este comando executará automaticamente "git add ." para incluir todas as alterações no stage.\n'));
     
     // Iniciar análise do repositório
     const repoSpinner = ora('Analisando repositório...').start();
@@ -268,12 +289,21 @@ async function main() {
     const tasks = new Listr([
       {
         title: 'Adicionando arquivos ao stage',
-        task: async () => {
-          // Verificar se já existem arquivos no stage
-          const { stdout: stagedFiles } = await execAsync('git diff --cached --name-only');
-          if (!stagedFiles.trim()) {
-            // Se não houver arquivos no stage, adicionar todos
-            await execAsync('git add .');
+        task: async (ctx) => {
+          // Armazenar o estado antes do git add para mensagens informativas
+          const { stdout: beforeStatus } = await execAsync('git status --porcelain');
+          const unstagedCount = beforeStatus.split('\n').filter(line => 
+            line.trim() && (line[0] === '?' || line[0] === ' ' && line[1] !== ' ')
+          ).length;
+          
+          // Sempre adicionar todos os arquivos não rastreados e modificados ao stage
+          await execAsync('git add .');
+          
+          // Armazenar informação sobre quantos arquivos foram adicionados
+          if (unstagedCount > 0) {
+            return `${unstagedCount} arquivo(s) adicionado(s) ao stage`;
+          } else {
+            return 'Todos os arquivos já estavam no stage';
           }
         }
       },
@@ -394,8 +424,112 @@ async function main() {
     
     console.log(typeTable.toString());
     
-    // Verificar se foi especificado um tipo via linha de comando
-    if (preSelectedType && preSelectedDescription) {
+    // Verificar se foram especificados múltiplos tipos via linha de comando
+    if (multipleCommitTypes.length > 0) {
+      console.log(chalk.cyan(`\nProcessando ${multipleCommitTypes.length} tipos de commit solicitados:`));
+      
+      // Array para rastrear tipos processados com sucesso
+      const processedTypes = [];
+      
+      // Processar cada tipo de commit solicitado
+      for (const commitRequest of multipleCommitTypes) {
+        const { type, description } = commitRequest;
+        
+        // Verificar se o tipo solicitado existe nas alterações
+        let typeExists = typeCounts.some(tc => tc.type === type);
+        
+        // Verificar variações de breaking change se o tipo exato não for encontrado
+        if (!typeExists && type.endsWith('!')) {
+          const baseType = type.slice(0, -1);
+          typeExists = typeCounts.some(tc => tc.type === baseType);
+          
+          // Se encontrou o tipo base, converter para breaking change
+          if (typeExists) {
+            console.log(chalk.yellow(`\nTipo ${type} não encontrado, mas encontrou-se ${baseType}.`));
+            console.log(chalk.yellow(`Convertendo arquivos de ${baseType} para ${type} (breaking change)...`));
+            
+            // Converter o tipo para breaking change
+            if (!filesByType[type]) {
+              filesByType[type] = [];
+            }
+            filesByType[type] = [...filesByType[type], ...filesByType[baseType]];
+            delete filesByType[baseType];
+            
+            // Atualizar typeCounts
+            const index = typeCounts.findIndex(tc => tc.type === baseType);
+            if (index !== -1) {
+              typeCounts[index].type = type;
+            }
+            
+            typeExists = true;
+          }
+        }
+        
+        if (typeExists) {
+          // Obter a lista de arquivos específicos para este tipo
+          const filesToCommit = filesByType[type] || [];
+          
+          console.log(chalk.green(`\n[${processedTypes.length + 1}/${multipleCommitTypes.length}] Processando commit do tipo ${TYPE_COLORS[type] ? TYPE_COLORS[type](type) : type}: "${description}"`));
+          console.log(chalk.cyan(`Commitando ${filesToCommit.length} arquivo(s):`));
+          filesToCommit.forEach((file, idx) => {
+            console.log(chalk.cyan(`  ${idx + 1}. ${file}`));
+          });
+          
+          // Criar commit para este tipo
+          const success = await createCommit(type, description, '', filesToCommit);
+          
+          if (success) {
+            processedTypes.push(type);
+            
+            // Remover os arquivos já commitados da lista de arquivos disponíveis
+            delete filesByType[type];
+            
+            // Atualizar typeCounts
+            const typeIndex = typeCounts.findIndex(tc => tc.type === type);
+            if (typeIndex !== -1) {
+              typeCounts.splice(typeIndex, 1);
+            }
+          }
+        } else {
+          console.log(chalk.red(`\n⚠️ ERRO: O tipo ${chalk.bold(type)} não foi encontrado nas alterações.`));
+          console.log(chalk.yellow(`Não foi possível realizar o commit porque nenhum arquivo foi classificado como '${type}'.`));
+          console.log(chalk.yellow(`Pulando para o próximo tipo de commit...`));
+        }
+      }
+      
+      console.log(chalk.green(`\nProcessados ${processedTypes.length} de ${multipleCommitTypes.length} tipos de commit solicitados.`));
+      
+      // Verificar se o usuário solicitou para parar após os commits
+      if (stopAfterCommit) {
+        console.log(chalk.cyan('\nFlag --stop detectada. Finalizando após os commits solicitados.'));
+        return;
+      }
+      
+      // Se ainda houver outros tipos, perguntar se deseja prosseguir
+      if (typeCounts.length > 0) {
+        const { shouldContinue } = await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'shouldContinue',
+            message: 'Há outros tipos de alterações. Deseja continuar com o fluxo interativo para eles?',
+            default: true
+          }
+        ]);
+        
+        if (!shouldContinue) {
+          console.log(chalk.yellow('\nOperação finalizada pelo usuário.'));
+          return;
+        }
+        
+        // Continuar com o fluxo interativo para os tipos restantes
+      } else {
+        // Todos os arquivos foram commitados
+        console.log(chalk.green('\nTodas as alterações foram commitadas com sucesso.'));
+        return;
+      }
+    }
+    // Verificar se foi especificado um único tipo via linha de comando (compatibilidade com o código existente)
+    else if (preSelectedType && preSelectedDescription) {
       // Verificar se o tipo especificado está entre os tipos detectados
       let typeExists = typeCounts.some(tc => tc.type === preSelectedType);
       

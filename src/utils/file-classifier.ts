@@ -1,6 +1,7 @@
 /**
  * Módulo compartilhado para classificação de arquivos
  * Este módulo centraliza a lógica de classificação para garantir consistência entre diferentes comandos
+ * Usado por todos os scripts relacionados à análise de alterações no DiffSense
  */
 
 import path from 'path';
