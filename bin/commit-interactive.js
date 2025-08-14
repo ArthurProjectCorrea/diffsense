@@ -175,29 +175,23 @@ async function main() {
       return;
     }
     
-    // Obter arquivos modificados
+    // Adicionar todos os arquivos automaticamente (sempre executar git add .)
+    console.log('Adicionando todos os arquivos ao stage...');
+    await execAsync('git add .');
+    
+    // Obter arquivos modificados após o git add .
     console.log('Procurando alterações', createProgressBar(100, 50));
     const { stdout: stagedFiles } = await execAsync('git diff --cached --name-only');
-    const { stdout: modifiedFiles } = await execAsync('git diff --name-only');
     const { stdout: untrackedFiles } = await execAsync('git ls-files --others --exclude-standard');
     
-    // Combinar todos os arquivos modificados
+    // Combinar todos os arquivos staged
     const allFiles = [...new Set([
       ...stagedFiles.split('\n').filter(Boolean),
-      ...modifiedFiles.split('\n').filter(Boolean),
       ...untrackedFiles.split('\n').filter(Boolean)
     ])];
     
     console.log(createProgressBar(100, 100));
     console.log(`\n✅ Encontradas ${allFiles.length} alterações no repositório.`);
-    
-    // Adicionar todos os arquivos se não estiverem staged
-    const { stdout: stagedFilesCheck } = await execAsync('git diff --cached --name-only');
-    const stagedCount = stagedFilesCheck.split('\n').filter(Boolean).length;
-    if (stagedCount === 0) {
-      console.log('Adicionando arquivos alterados ao stage...');
-      await execAsync('git add .');
-    }
     
     // Classificar os arquivos por tipo
     console.log('Classificando alterações', createProgressBar(100, 0));
@@ -323,7 +317,7 @@ async function main() {
       const isBreakingChange = type.includes('!');
       console.log(`\n📦 Commit ${commitCount}/${typeCounts.length}: ${type.toUpperCase()} (${files.length} arquivos)`);
       
-      // Gerar staged files para esse tipo
+      // Gerar staged files para esse tipo (resetar primeiro, depois adicionar apenas os arquivos desse tipo)
       await execAsync('git reset HEAD -- .');
       for (const file of files) {
         await execAsync(`git add "${file}"`);
@@ -360,10 +354,19 @@ async function main() {
       }
       
       // Executar o commit
-      console.log(`> git commit -m "${commitMessage}"`);
+      console.log(`> git commit com mensagem personalizada`);
       
       try {
-        execSync(`git commit -m "${commitMessage}"`, { stdio: 'inherit' });
+        // Salvar a mensagem em um arquivo temporário para preservar formatação e quebras de linha
+        const tempFile = path.join(process.cwd(), '.commit-msg-temp');
+        await fs.writeFile(tempFile, commitMessage, 'utf8');
+        
+        // Usar o arquivo temporário para o commit
+        execSync(`git commit -F "${tempFile}"`, { stdio: 'inherit' });
+        
+        // Remover o arquivo temporário após o commit
+        await fs.unlink(tempFile).catch(() => {});
+        
         console.log(colorize(`   ✅ Commit realizado com sucesso!`, COLORS.green));
       } catch (error) {
         console.error(colorize(`   ❌ Erro ao realizar commit: ${error.message}`, COLORS.red));
