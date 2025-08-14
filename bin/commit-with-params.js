@@ -75,11 +75,12 @@ function parseArguments() {
   const params = {};
 
   // Verificar argumentos no formato --type "descrição"
+  // IMPORTANTE: Esses tipos DEVEM corresponder exatamente aos mesmos tipos que o classificador suporta
   const validTypes = [
-    // Tipos padrão
-    'feat', 'fix', 'docs', 'refactor', 'test', 'chore', 'style', 'perf', 'build', 'ci', 'revert',
-    // Tipos com breaking changes
-    'feat!', 'fix!', 'docs!', 'refactor!', 'test!', 'chore!', 'style!', 'perf!'
+    // Tipos padrão - devem corresponder aos tipos em CommitType no file-classifier.ts
+    'feat', 'fix', 'docs', 'refactor', 'test', 'chore',
+    // Tipos com breaking changes - versões com '!' dos tipos padrão
+    'feat!', 'fix!', 'docs!', 'refactor!', 'test!', 'chore!'
   ];
   
   // Verificar se o usuário está pedindo ajuda
@@ -162,8 +163,6 @@ function showHelp() {
   console.log(`  ${chalk.magenta('--refactor')} Refatoração de código`);
   console.log(`  ${chalk.cyan('--test')}     Testes`);
   console.log(`  ${chalk.grey('--chore')}    Tarefas de manutenção`);
-  console.log(`  ${chalk.white('--style')}    Formatação de código`);
-  console.log(`  ${chalk.blueBright('--perf')}     Melhorias de performance`);
   
   console.log('\n' + chalk.bold('Para breaking changes (mudanças que quebram compatibilidade):'));
   console.log('  pnpm commit --breaking --feat "mudança incompatível"');
@@ -197,9 +196,24 @@ function showHeader() {
 }
 
 // Função para criar o commit
-async function createCommit(commitType, description, scope = '') {
+async function createCommit(commitType, description, scope = '', filesToCommit) {
   try {
     const commitSpinner = ora('Criando commit...').start();
+    
+    // Se foram especificados arquivos para este tipo, garantir que apenas estes arquivos sejam commitados
+    if (filesToCommit && Array.isArray(filesToCommit) && filesToCommit.length > 0) {
+      // Resetar o stage primeiro para garantir que apenas esses arquivos serão commitados
+      await execAsync('git reset HEAD -- .');
+      
+      // Adicionar apenas os arquivos específicos para este tipo
+      for (const file of filesToCommit) {
+        await execAsync(`git add "${file}"`);
+      }
+      
+      commitSpinner.text = `Preparando ${filesToCommit.length} arquivos para commit do tipo ${commitType}...`;
+    } else {
+      commitSpinner.warn('Nenhum arquivo especificado para este tipo. O commit incluirá todos os arquivos no stage.');
+    }
     
     // Formatação do commit conforme conventional commits
     const breakingChange = commitType.endsWith('!');
@@ -415,11 +429,16 @@ async function main() {
       if (typeExists) {
         console.log(chalk.green(`\nUsando parâmetros informados: ${TYPE_COLORS[preSelectedType] ? TYPE_COLORS[preSelectedType](preSelectedType) : chalk.white(preSelectedType)}: "${preSelectedDescription}"`));
         
-        // Criar commit diretamente com os parâmetros informados
-        await createCommit(preSelectedType, preSelectedDescription);
+        // Obter a lista de arquivos específicos para este tipo
+        const filesToCommit = filesByType[preSelectedType] || [];
         
-        // Remover os arquivos do tipo já commitado
-        const filesCommitted = filesByType[preSelectedType] || [];
+        console.log(chalk.cyan(`\nCommitando ${filesToCommit.length} arquivo(s) do tipo ${preSelectedType}:`));
+        filesToCommit.forEach((file, idx) => {
+          console.log(chalk.cyan(`  ${idx + 1}. ${file}`));
+        });
+        
+        // Criar commit diretamente com os parâmetros informados e os arquivos específicos
+        await createCommit(preSelectedType, preSelectedDescription, '', filesToCommit);
         
         // Verificar se o usuário solicitou para parar após o commit
         if (stopAfterCommit) {
@@ -454,7 +473,17 @@ async function main() {
           return;
         }
       } else {
-        console.log(chalk.yellow(`\nTipo ${preSelectedType} informado não foi encontrado nas alterações. Continuando com o fluxo interativo.`));
+        console.log(chalk.red(`\n⚠️ ERRO: O tipo ${chalk.bold(preSelectedType)} informado não foi encontrado nas alterações.`));
+        console.log(chalk.yellow(`Não foi possível realizar o commit porque nenhum arquivo foi classificado como '${preSelectedType}'.`));
+        console.log(chalk.yellow(`Verifique a classificação dos arquivos na tabela acima para ver quais tipos estão disponíveis.`));
+        
+        // Se a flag --stop foi especificada, encerrar o programa mesmo se o tipo não foi encontrado
+        if (stopAfterCommit) {
+          console.log(chalk.cyan('\nFlag --stop detectada. Finalizando sem fazer commit.'));
+          return;
+        }
+        
+        console.log(chalk.cyan('\nContinuando com o fluxo interativo para os tipos disponíveis.'));
       }
     }
     
@@ -479,8 +508,16 @@ async function main() {
           }
         ]);
         
-        // Criar o commit para o tipo pré-selecionado
-        await createCommit(preSelectedType, description);
+        // Obter a lista de arquivos específicos para este tipo
+        const filesToCommit = filesByType[preSelectedType] || [];
+        
+        console.log(chalk.cyan(`\nCommitando ${filesToCommit.length} arquivo(s) do tipo ${preSelectedType}:`));
+        filesToCommit.forEach((file, idx) => {
+          console.log(chalk.cyan(`  ${idx + 1}. ${file}`));
+        });
+        
+        // Criar o commit para o tipo pré-selecionado com os arquivos específicos
+        await createCommit(preSelectedType, description, '', filesToCommit);
         
         // Verificar se o usuário solicitou para parar após o commit
         if (stopAfterCommit) {
@@ -568,7 +605,15 @@ async function main() {
       if (confirmCommits) {
         // Criar commits
         for (const { type, description, scope } of commitPromises) {
-          await createCommit(type, description, scope);
+          // Obter a lista de arquivos específicos para este tipo
+          const filesToCommit = filesByType[type] || [];
+          
+          console.log(chalk.cyan(`\nCommitando ${filesToCommit.length} arquivo(s) do tipo ${type}:`));
+          filesToCommit.forEach((file, idx) => {
+            console.log(chalk.cyan(`  ${idx + 1}. ${file}`));
+          });
+          
+          await createCommit(type, description, scope, filesToCommit);
         }
         
         console.log(chalk.green('\nTodos os commits foram realizados com sucesso!'));
