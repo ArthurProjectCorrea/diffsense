@@ -14,7 +14,8 @@
     "start": "node bin/diffsense.js",
     "analyze": "node bin/diffsense.js run",
     "dev": "pnpm exec ts-node --esm src/cli/index.ts run",
-    "commit": "node bin/commit-interactive.js",
+    "commit": "node bin/commit-interactive-enhanced.js",
+    "commit:legacy": "node bin/commit-interactive.js",
     "commit:simple": "node bin/diffsense.js commit --simple",
     "commit:smart": "node bin/commit-by-type-new.js",
     "commit:suggest": "node bin/diffsense.js suggest",
@@ -79,9 +80,15 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "boxen": "^8.0.1",
     "chalk": "^5.3.0",
+    "cli-table3": "^0.6.5",
     "commander": "^11.1.0",
+    "gradient-string": "^3.0.0",
+    "inquirer": "^12.9.2",
+    "listr": "^0.14.3",
     "minimatch": "^9.0.3",
+    "ora": "^8.2.0",
     "simple-git": "^3.21.0",
     "ts-morph": "^21.0.1",
     "yaml": "^2.3.4"
