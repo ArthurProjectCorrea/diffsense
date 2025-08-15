@@ -27,6 +27,9 @@ diffsense group --base main --head feature/my-feature
 
 # Gerar múltiplos commits, um por tipo
 diffsense commit-by-type --base main --head feature/my-feature
+
+# Usar o comando pnpm para commits organizados por tipo
+pnpm commit
 ```
 
 ### Gerando Commits Automáticos
@@ -86,6 +89,62 @@ Você pode personalizar o comportamento em `.diffsenserc.json`:
     ]
   }
 }
+```
+
+## Usando o Comando pnpm commit
+
+O DiffSense oferece um comando `pnpm commit` que simplifica o processo de criação de commits organizados por tipo. Este comando:
+
+1. Analisa todas as alterações pendentes no repositório
+2. Classifica os arquivos por tipo (feat, fix, docs, etc.)
+3. Para cada tipo de alteração, solicita uma mensagem de commit
+4. Cria commits separados para cada tipo usando a flag `--only` do Git
+
+### Como usar
+
+```bash
+# Execute no diretório raiz do projeto
+pnpm commit
+```
+
+O comando irá guiá-lo através de um processo interativo:
+
+1. Primeiro, ele analisará suas alterações e mostrará quais arquivos foram classificados em cada tipo
+2. Em seguida, solicitará uma mensagem descritiva para cada tipo de alteração
+3. Finalmente, criará commits separados para cada tipo, incluindo apenas os arquivos relevantes em cada commit
+
+### Exemplo de fluxo
+
+```
+$ pnpm commit
+
+⚠️ ATENÇÃO ⚠️
+
+Cada tipo de alteração será commitado separadamente.
+Você fornecerá uma descrição para cada tipo de alteração.
+Arquivos serão adicionados ao Git de acordo com sua classificação.
+
+? Informe a descrição das modificações feat (2 arquivos) (max 100 caracteres): adicionar nova API de usuários
+? Informe a descrição das modificações fix (1 arquivo) (max 100 caracteres): corrigir validação de email
+? Informe a descrição das modificações docs (3 arquivos) (max 100 caracteres): atualizar documentação da API
+
+✅ Commit realizado: feat: adicionar nova API de usuários
+✅ Commit realizado: fix: corrigir validação de email
+✅ Commit realizado: docs: atualizar documentação da API
+
+3 commits realizados com sucesso!
+```
+
+### Opções avançadas
+
+Para casos específicos, você pode usar opções adicionais:
+
+```bash
+# Usar referências específicas para comparação
+pnpm commit -- -b main -h HEAD
+
+# Ativar modo de depuração para solução de problemas
+pnpm commit -- -d
 ```
 
 ## Integração com Git Hooks
