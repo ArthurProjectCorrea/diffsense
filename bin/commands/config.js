@@ -3,8 +3,7 @@
  * Define estrutura de comandos e opções
  */
 
-import { Command } from 'commander';
-import chalk from 'chalk';
+import { createCLI } from '../cli-template.js';
 
 /**
  * Cria e configura o objeto de comando CLI
@@ -14,17 +13,7 @@ import chalk from 'chalk';
  * @returns {Command} Comando configurado
  */
 export function createCommandProgram(name, description, version = '1.0.0') {
-  const program = new Command();
-  
-  program
-    .name(name)
-    .description(description)
-    .version(version)
-    .addHelpText('after', () => {
-      return chalk.dim('\nDiffSense - Framework de análise de código e commits semânticos');
-    });
-    
-  return program;
+  return createCLI(name, description, version);
 }
 
 /**

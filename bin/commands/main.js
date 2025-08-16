@@ -5,7 +5,7 @@
 
 import { runCommitProcess } from '../commit/index.js';
 import { executeAnalysis } from './analyzer.js';
-import chalk from 'chalk';
+import { handleError, showBanner } from '../cli-template.js';
 
 /**
  * Executa o comando principal baseado nas opções fornecidas
@@ -14,8 +14,22 @@ import chalk from 'chalk';
  */
 export async function executeCommand(options) {
   try {
+    // Determinar o modo e mostrar banner apropriado se não for modo silencioso
+    const isAnalyzerMode = options.analyzer;
+    const silentMode = options.autoComplete || options.json;
+    
+    if (!silentMode) {
+      showBanner(
+        isAnalyzerMode ? 'Análise de Alterações' : 'Commit Inteligente',
+        isAnalyzerMode 
+          ? 'Análise detalhada de mudanças no código' 
+          : '✨ Ferramenta para commits semânticos automatizados ✨',
+        false // Não mostrar o header grande para uma interface mais limpa
+      );
+    }
+    
     // Determinar modo de operação baseado nas opções
-    if (options.analyzer) {
+    if (isAnalyzerMode) {
       // Modo analisador - apenas exibe análise sem commit
       return await executeAnalysis(options);
     } else {
@@ -23,22 +37,6 @@ export async function executeCommand(options) {
       return await runCommitProcess(options);
     }
   } catch (error) {
-    handleCommandError(error, options.verbose);
+    handleError(error, options.verbose);
   }
-}
-
-/**
- * Gerencia erros de comando de forma padronizada
- * @param {Error} error - O erro capturado
- * @param {boolean} verbose - Se deve exibir detalhes adicionais
- */
-export function handleCommandError(error, verbose = false) {
-  console.error(chalk.red('\n❌ Erro:'), chalk.red(error instanceof Error ? error.message : String(error)));
-  
-  if (verbose && error instanceof Error && error.stack) {
-    console.error(chalk.gray('\nStack trace:'));
-    console.error(chalk.gray(error.stack));
-  }
-  
-  process.exit(1);
 }
