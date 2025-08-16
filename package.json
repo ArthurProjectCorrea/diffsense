@@ -16,6 +16,7 @@
     "analyze": "node bin/diffsense.js run",
     "analyzer": "node bin/analyzer.js",
     "commit": "node bin/commit.js",
+    "commit:auto": "node bin/commit.js --autoCommit",
     "dev": "pnpm exec ts-node --esm src/cli/index.ts run",
     "check-types": "tsc --noEmit",
     "clean": "pnpm dlx rimraf node_modules dist pnpm-lock.yaml",
