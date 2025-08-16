@@ -20,6 +20,7 @@ program
   .option('-h, --head <ref>', 'Referência para comparação (ex: HEAD)', 'HEAD')
   .option('--json', 'Saída em formato JSON')
   .option('-d, --dry-run', 'Exibe os comandos de commit sem executá-los')
+  .option('--autoCommit', 'Inicializa o modo de commit automático (ainda pede confirmação)')
   .action(async (options) => {
     try {
       console.log('🔍 Analisando alterações...');
