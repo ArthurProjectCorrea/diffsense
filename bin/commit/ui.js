@@ -80,12 +80,11 @@ export const displayChangeSummary = (filesByType) => {
 export const confirmCommits = async () => {
   console.log('\n');
   
-  const confirmacaoBox = boxen(chalk.bold('CONFIRMAÇÃO DE COMMITS'), {
+  const confirmacaoBox = boxen(gradient.pastel('CONFIRMAÇÃO DE COMMITS'), {
     padding: 1,
     margin: 1,
     borderStyle: 'round',
-    borderColor: 'yellow',
-    backgroundColor: '#222'
+    borderColor: 'cyan'
   });
   
   console.log(confirmacaoBox);
@@ -114,15 +113,15 @@ export const confirmCommits = async () => {
     console.log('\n' + boxen(chalk.red.bold('❌ Operação cancelada pelo usuário.'), {
       padding: 1,
       borderStyle: 'round',
-      borderColor: 'red'
+      borderColor: 'cyan'
     }));
     return false;
   }
   
-  console.log('\n' + boxen(chalk.green.bold('✅ Confirmado! Realizando commits...'), {
+  console.log('\n' + boxen(chalk.green('✅ Confirmado! Realizando commits...'), {
     padding: 1,
     borderStyle: 'round',
-    borderColor: 'green'
+    borderColor: 'cyan'
   }));
   return true;
 };
@@ -137,17 +136,11 @@ export const getCustomCommitDescription = async (type) => {
   console.clear();
   
   // Cabeçalho estilizado com boxen
-  const titulo = boxen(chalk.bold(`COMMIT DO TIPO: ${type.toUpperCase()}`), {
+  const titulo = boxen(gradient.pastel(`COMMIT DO TIPO: ${type.toUpperCase()}`), {
     padding: 1,
     margin: 1,
     borderStyle: 'round',
-    borderColor: type === 'feat' ? 'green' : 
-                 type === 'fix' ? 'red' : 
-                 type === 'docs' ? 'cyan' : 
-                 type === 'style' ? 'magenta' :
-                 type === 'refactor' ? 'yellow' :
-                 type === 'test' ? 'blue' : 'gray',
-    backgroundColor: '#222'
+    borderColor: 'cyan'
   });
   
   console.log(titulo);
