@@ -1,6 +1,7 @@
 import { analyzeChangesAndFiles, groupFilesByType } from './analyzer.js';
 import { displayChangeSummary, confirmCommits } from './ui.js';
 import { executeCommits, displayCommitSummary } from './committer.js';
+import chalk from 'chalk';
 
 // Função principal que orquestra todo o processo
 export const runCommitProcess = async (options) => {
@@ -20,10 +21,10 @@ export const runCommitProcess = async (options) => {
   
   // Se é modo dry-run, mostrar mensagem
   if (options.dryRun) {
-    console.log('\n🔍 Modo dry-run: os comandos serão exibidos, mas não executados.');
+    console.log(chalk.cyan('\n🔍 Modo dry-run: os comandos serão exibidos, mas não executados.'));
   } else if (options.autoComplete) {
     // Pular confirmação em modo autoComplete
-    console.log('\n🔄 Modo auto-complete: executando commits automaticamente sem confirmação...');
+    console.log(chalk.blue('\n🔄 Modo auto-complete: executando commits automaticamente sem confirmação...'));
   } else {
     // Solicitar confirmação para prosseguir
     const confirmed = await confirmCommits();

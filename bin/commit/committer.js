@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import { getCustomCommitDescription } from './ui.js';
 import chalk from 'chalk';
 import boxen from 'boxen';
+import gradient from 'gradient-string';
 
 // Função para realizar commits por tipo
 export const executeCommits = async (filesByType, options) => {
@@ -110,19 +111,19 @@ export const displayCommitSummary = (results, filesByType, options) => {
       console.log('\n' + boxen(chalk.green.bold('✅ Todos os commits foram realizados com sucesso!'), {
         padding: 1,
         borderStyle: 'round',
-        borderColor: 'green'
+        borderColor: 'cyan'
       }));
     } else if (results.success > 0 && results.error > 0) {
       console.log('\n' + boxen(chalk.yellow.bold(`⚠️ ${results.success} commits realizados com sucesso, ${results.error} com erro`), {
         padding: 1,
         borderStyle: 'round',
-        borderColor: 'yellow'
+        borderColor: 'cyan'
       }));
     } else if (results.success === 0 && results.error > 0) {
       console.log('\n' + boxen(chalk.red.bold(`❌ Nenhum commit realizado com sucesso, ${results.error} com erro`), {
         padding: 1,
         borderStyle: 'round',
-        borderColor: 'red'
+        borderColor: 'cyan'
       }));
     }
     
@@ -161,7 +162,7 @@ export const displayCommitSummary = (results, filesByType, options) => {
       console.log('\n' + chalk.green.bold('✨ Commits realizados com sucesso!'));
       
       const nextSteps = boxen(
-        chalk.bold.blue('💡 PRÓXIMOS PASSOS:') + '\n\n' +
+        gradient.pastel('💡 PRÓXIMOS PASSOS:') + '\n\n' +
         chalk.white('▪ git push           (Enviar commits para o repositório remoto)\n') +
         chalk.white('▪ git pull           (Atualizar repositório local)\n') +
         chalk.white('▪ git log            (Visualizar histórico de commits)'),
@@ -169,7 +170,7 @@ export const displayCommitSummary = (results, filesByType, options) => {
           padding: 1,
           margin: { top: 1 },
           borderStyle: 'round',
-          borderColor: 'blue'
+          borderColor: 'cyan'
         }
       );
       

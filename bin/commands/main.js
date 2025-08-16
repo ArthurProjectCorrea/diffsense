@@ -20,10 +20,10 @@ export async function executeCommand(options) {
     
     if (!silentMode) {
       showBanner(
-        isAnalyzerMode ? 'Análise de Alterações' : 'Commit Inteligente',
+        'DiffSense',
         isAnalyzerMode 
-          ? 'Análise detalhada de mudanças no código' 
-          : '✨ Ferramenta para commits semânticos automatizados ✨',
+          ? '🔍 Análise detalhada de mudanças no código' 
+          : '✨ Ferramenta para commits semânticos automatizados',
         false // Não mostrar o header grande para uma interface mais limpa
       );
     }

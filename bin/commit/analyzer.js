@@ -4,6 +4,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { createInterface } from 'readline';
 import { promises as fs } from 'fs';
+import chalk from 'chalk';
 
 export const execPromise = promisify(exec);
 
@@ -45,25 +46,25 @@ export const groupFilesByType = (result) => {
 
 // Função para analisar as alterações
 export const analyzeChangesAndFiles = async (options) => {
-  console.log('🔍 Analisando alterações...');
-  console.log('⚠️  Nota: Todos os arquivos serão adicionados ao stage (git add .) para garantir análise completa.');
+  console.log(chalk.blue('🔍 Analisando alterações...'));
+  console.log(chalk.yellow('⚠️  Nota: Todos os arquivos serão adicionados ao stage (git add .) para garantir análise completa.'));
   
   try {
     // Verificar status inicial
     const { stdout: initialStatus } = await execPromise('git status --porcelain');
-    console.log(`\n📊 Status Git antes do add:\n${initialStatus || '(Área de trabalho limpa)'}`);
+    console.log(chalk.cyan(`\n📊 Status Git antes do add:\n${initialStatus || '(Área de trabalho limpa)'}`));
     
     // Executar git add para garantir que todos os arquivos são considerados
     const { stdout: addOutput, stderr: addError } = await execPromise('git add .');
     if (addError) {
-      console.warn(`⚠️ Aviso ao adicionar arquivos: ${addError}`);
+      console.warn(chalk.yellow(`⚠️ Aviso ao adicionar arquivos: ${addError}`));
     }
     
     // Verificar status após git add
     const { stdout: afterAddStatus } = await execPromise('git status --porcelain');
-    console.log(`\n📊 Status Git após add:\n${afterAddStatus || '(Área de trabalho limpa)'}`);
+    console.log(chalk.cyan(`\n📊 Status Git após add:\n${afterAddStatus || '(Área de trabalho limpa)'}`));
   } catch (gitError) {
-    console.error(`❌ Erro ao executar git add: ${gitError.message}`);
+    console.error(chalk.red(`❌ Erro ao executar git add: ${gitError.message}`));
   }
   
   const result = await analyzeChanges(options.base, options.head);

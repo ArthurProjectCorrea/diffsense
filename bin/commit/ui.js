@@ -2,6 +2,7 @@ import { createInterface } from 'readline';
 import chalk from 'chalk';
 import boxen from 'boxen';
 import inquirer from 'inquirer';
+import gradient from 'gradient-string';
 
 // Função para exibir resumo das alterações classificadas
 export const displayChangeSummary = (filesByType) => {
@@ -36,12 +37,11 @@ export const displayChangeSummary = (filesByType) => {
     default: '📋'
   };
   
-  const titulo = boxen(chalk.bold('RESUMO DE ALTERAÇÕES CLASSIFICADAS'), {
+  const titulo = boxen(gradient.pastel('=== DiffSense: Resumo de Alterações ==='), {
     padding: 1,
     margin: 1,
     borderStyle: 'round',
-    borderColor: 'blue',
-    backgroundColor: '#222'
+    borderColor: 'cyan'
   });
   
   console.log(titulo);
@@ -60,22 +60,17 @@ export const displayChangeSummary = (filesByType) => {
       {
         padding: 1,
         borderStyle: 'round',
-        borderColor: type === 'feat' ? 'green' : 
-                     type === 'fix' ? 'red' : 
-                     type === 'docs' ? 'cyan' : 
-                     type === 'style' ? 'magenta' :
-                     type === 'refactor' ? 'yellow' :
-                     type === 'test' ? 'blue' : 'gray'
+        borderColor: 'cyan'
       }
     ));
     console.log(''); // Espaçamento entre os tipos
   }
   
-  console.log(boxen(chalk.blue.bold('PRÓXIMAS ETAPAS'), {
+  console.log(boxen(gradient.pastel('PRÓXIMAS ETAPAS'), {
     padding: 1,
     margin: { top: 1 },
     borderStyle: 'round',
-    borderColor: 'blue'
+    borderColor: 'cyan'
   }));
   
   return true;
