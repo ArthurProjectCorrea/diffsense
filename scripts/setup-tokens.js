@@ -15,22 +15,6 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
 
 // Obter o diretório atual para módulos ES
 const __filename = fileURLToPath(import.meta.url);
