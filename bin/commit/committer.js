@@ -97,12 +97,11 @@ export const displayCommitSummary = (results, filesByType, options) => {
   if (!options.dryRun && (results.success > 0 || results.error > 0)) {
     console.clear();
     
-    const titulo = boxen(chalk.bold('RESUMO DE COMMITS'), {
+    const titulo = boxen(gradient.pastel('=== DiffSense: Resumo de Commits ==='), {
       padding: 1,
       margin: 1,
       borderStyle: 'round',
-      borderColor: 'blue',
-      backgroundColor: '#222'
+      borderColor: 'cyan'
     });
     
     console.log(titulo);
@@ -177,7 +176,7 @@ export const displayCommitSummary = (results, filesByType, options) => {
       console.log(nextSteps);
     }
   } else if (options.dryRun) {
-    console.log('\n' + boxen(chalk.cyan.bold('📋 Simulação concluída! Nenhum commit foi realizado (modo dry-run).'), {
+    console.log('\n' + boxen(chalk.cyan('📋 Simulação concluída! Nenhum commit foi realizado (modo dry-run).'), {
       padding: 1,
       borderStyle: 'round',
       borderColor: 'cyan'

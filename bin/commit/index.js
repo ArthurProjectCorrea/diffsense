@@ -6,7 +6,11 @@ import chalk from 'chalk';
 // Função principal que orquestra todo o processo
 export const runCommitProcess = async (options) => {
   // Analisar alterações e obter resultados
+  // Analisar alterações e obter resultados
   const result = await analyzeChangesAndFiles(options);
+  
+  // Exibir mensagem de conclusão
+  console.log(chalk.green('✔ Análise concluída: ' + result.files.length + ' arquivos analisados'));
   
   // Agrupar arquivos por tipo
   const filesByType = groupFilesByType(result);

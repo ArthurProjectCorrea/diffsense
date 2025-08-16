@@ -6,6 +6,8 @@
 import { analyzeChanges } from '../../dist/index.js';
 import { ResultFormatter } from '../../dist/utils/formatter.js';
 import chalk from 'chalk';
+import gradient from 'gradient-string';
+import boxen from 'boxen';
 
 /**
  * Executa análise de alterações entre referências Git
