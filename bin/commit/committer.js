@@ -92,19 +92,47 @@ export const executeCommits = async (filesByType, options) => {
 // Função para exibir o resumo final dos commits
 export const displayCommitSummary = (results, filesByType, options) => {
   if (!options.dryRun && (results.success > 0 || results.error > 0)) {
-    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📈 RESUMO DE COMMITS: ${results.success} realizados com sucesso, ${results.error} com erro`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.clear();
+    
+    console.log('\n╭──────────────────────────────────────────────────────────────────╮');
+    console.log('│                      RESUMO DE COMMITS                           │');
+    console.log('╰──────────────────────────────────────────────────────────────────╯');
+    
+    if (results.success > 0 && results.error === 0) {
+      console.log('\n\x1b[32m✅ Todos os commits foram realizados com sucesso!\x1b[0m');
+    } else if (results.success > 0 && results.error > 0) {
+      console.log(`\n\x1b[33m⚠️  ${results.success} commits realizados com sucesso, ${results.error} com erro\x1b[0m`);
+    } else if (results.success === 0 && results.error > 0) {
+      console.log(`\n\x1b[31m❌ Nenhum commit realizado com sucesso, ${results.error} com erro\x1b[0m`);
+    }
     
     if (results.success > 0) {
-      console.log('\n📊 Total de arquivos commitados por tipo:');
+      console.log('\n\x1b[36m📊 Total de arquivos commitados por tipo:\x1b[0m');
+      
+      const typeColors = {
+        feat: '\x1b[32m',    // Verde
+        fix: '\x1b[31m',     // Vermelho
+        docs: '\x1b[36m',    // Ciano
+        style: '\x1b[35m',   // Magenta
+        refactor: '\x1b[33m',// Amarelo
+        test: '\x1b[34m',    // Azul
+        chore: '\x1b[90m',   // Cinza
+        default: '\x1b[37m'  // Branco
+      };
+      
       for (const type of Object.keys(filesByType).sort()) {
-        console.log(`  - ${type}: ${filesByType[type].size} arquivo(s)`);
+        const color = typeColors[type] || typeColors.default;
+        const files = Array.from(filesByType[type]);
+        console.log(`  ${color}▪ ${type}: ${files.length} arquivo(s)\x1b[0m`);
       }
       
-      console.log('\n✨ Commits realizados com sucesso!');
+      console.log('\n\x1b[32m✨ Commits realizados com sucesso!\x1b[0m');
+      console.log('\n\x1b[36m💡 Próximos passos:\x1b[0m');
+      console.log('  \x1b[37m▪ git push           (Enviar commits para o repositório remoto)\x1b[0m');
+      console.log('  \x1b[37m▪ git pull           (Atualizar repositório local)\x1b[0m');
+      console.log('  \x1b[37m▪ git log            (Visualizar histórico de commits)\x1b[0m');
     }
   } else if (options.dryRun) {
-    console.log('\n📋 Simulação concluída! Nenhum commit foi realizado (modo dry-run).');
+    console.log('\n\x1b[36m📋 Simulação concluída! Nenhum commit foi realizado (modo dry-run).\x1b[0m');
   }
 };
