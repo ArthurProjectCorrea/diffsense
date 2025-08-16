@@ -21,6 +21,9 @@ export const runCommitProcess = async (options) => {
   // Se é modo dry-run, mostrar mensagem
   if (options.dryRun) {
     console.log('\n🔍 Modo dry-run: os comandos serão exibidos, mas não executados.');
+  } else if (options.autoComplete) {
+    // Pular confirmação em modo autoComplete
+    console.log('\n🔄 Modo auto-complete: executando commits automaticamente sem confirmação...');
   } else {
     // Solicitar confirmação para prosseguir
     const confirmed = await confirmCommits();
