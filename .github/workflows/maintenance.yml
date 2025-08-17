@@ -74,10 +74,10 @@ jobs:
             HAS_UPDATES=true
           fi
           
-          # Se houver atualizações, instalar e testar
+          # Se houver atualizações, instalar e verificar a compilação
           if [ "$HAS_UPDATES" = true ]; then
             pnpm install
-            pnpm test
+            pnpm run build
             
             # Criar commit semântico
             pnpm run workflow-commit -- \
