@@ -2,8 +2,6 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { AnalysisResult, ChangeType, FileStatus } from '../types/index.js';
 import { getChangeTypeDescription } from '../index.js';
-import boxen from 'boxen';
-import gradient from 'gradient-string';
 
 /**
  * Formatador para exibir os resultados da análise no console
@@ -17,14 +15,8 @@ export class ResultFormatter {
     const { files, summary, primaryType, baseBranch, headBranch } = result;
     let output = '';
     
-    // Cabeçalho colorido com gradiente
-    const title = gradient.pastel('=== DiffSense: Análise de Alterações ===');
-    output += boxen(title, {
-      padding: 1,
-      margin: 1,
-      borderStyle: 'round',
-      borderColor: 'cyan',
-    }) + '\n';
+    // Cabeçalho simples sem formatação elaborada
+    output += 'DiffSense: Análise de Alterações\n';
     
     // Informações sobre as referências analisadas
     output += chalk.bold('Referências:') + '\n';
