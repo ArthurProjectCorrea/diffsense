@@ -1,6 +1,6 @@
 import { GitUtils } from '../utils/git.js';
 import { DiffAnalyzer } from './diff-analyzer.js';
-import { AnalysisResult, CHANGE_PRIORITY, ChangeType, FileChange, FileStatus } from '../types/index.js';
+import { AnalysisResult, CHANGE_PRIORITY, ChangeType, FileChange } from '../types/index.js';
 import chalk from 'chalk';
 import ora from 'ora';
 

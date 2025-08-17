@@ -80,8 +80,8 @@ export class GitUtils {
               fileDiff = await this.git.diff([base, head, '--', file.path]);
               
               // Contar adições e deleções manualmente do diff
-              const addLines = (fileDiff.match(/^\+(?![\+\-\@\@])/gm) || []).length;
-              const delLines = (fileDiff.match(/^\-(?![\+\-\@\@])/gm) || []).length;
+              const addLines = (fileDiff.match(/^\+(?![+@-])/gm) || []).length;
+              const delLines = (fileDiff.match(/^-(?![+@-])/gm) || []).length;
               
               additions = addLines;
               deletions = delLines;

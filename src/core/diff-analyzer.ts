@@ -1,9 +1,4 @@
 import { ChangeType, CHANGE_PRIORITY, FileChange, FileStatus } from '../types/index.js';
-import { minimatch } from 'minimatch';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { parse } from 'yaml';
-import chalk from 'chalk';
 
 /**
  * Analisa o conteúdo do diff para determinar os tipos de alteração

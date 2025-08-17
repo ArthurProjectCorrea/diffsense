@@ -1,5 +1,5 @@
 import { ChangeAnalyzer } from './core/change-analyzer.js';
-import { AnalysisResult, ChangeType, FileStatus, CHANGE_PRIORITY, FileChange } from './types/index.js';
+import { AnalysisResult, ChangeType } from './types/index.js';
 
 /**
  * Analisa as alterações entre duas referências Git

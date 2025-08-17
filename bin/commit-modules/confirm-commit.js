@@ -10,7 +10,7 @@ import boxen from 'boxen';
  */
 function showCommitAlert() {
   console.log(boxen(
-    chalk.yellow('⚠️ ATENÇÃO ⚠️\n\n') +
+    chalk.yellow('⚠️  ATENÇÃO ⚠️\n\n') +
     'Cada tipo de alteração será commitado separadamente.\n' +
     'Você fornecerá uma descrição para cada tipo de alteração.\n' +
     'Os arquivos serão agrupados por tipo de alteração nos commits.',
