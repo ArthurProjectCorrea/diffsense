@@ -1,4 +1,7 @@
 import chalk from 'chalk';
+import boxen from 'boxen';
+// Declaração para módulo sem tipos
+declare module 'cli-table3';
 import Table from 'cli-table3';
 import { AnalysisResult, ChangeType, FileStatus } from '../types/index.js';
 import { getChangeTypeDescription } from '../index.js';
@@ -15,13 +18,15 @@ export class ResultFormatter {
     const { files, summary, primaryType, baseBranch, headBranch, hasBreakingChanges, breakingChanges } = result;
     let output = '';
     
-    // Cabeçalho simples sem formatação elaborada
-    output += 'DiffSense: Análise de Alterações\n';
-    
-    // Informações sobre as referências analisadas
-    output += chalk.bold('Referências:') + '\n';
-    output += `Base: ${chalk.yellow(baseBranch || 'HEAD^')}\n`;
-    output += `Head: ${chalk.yellow(headBranch || 'HEAD')}\n\n`;
+    // Banner e referências
+    const header = boxen(
+      chalk.cyan.bold('DiffSense - Análise de Alterações'),
+      { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'cyan' }
+    );
+    output += header + '\n';
+    output += chalk.bold('Referências: ') +
+      chalk.yellow(baseBranch || 'HEAD^') + ' → ' +
+      chalk.yellow(headBranch || 'HEAD') + '\n\n';
     
     // Resumo
     output += chalk.bold('Resumo:\n');

@@ -113,7 +113,8 @@ export class GitUtils {
         }
       }
       
-      spinner.succeed(chalk.green(`Análise concluída: ${uniqueFiles.length} arquivos modificados`));
+  // Conclui carregamento sem mensagem de sucesso para evitar poluição no modo analyzer
+  spinner.stop();
       return filesMap;
     } catch (error) {
       spinner.fail(`Erro ao obter diferenças: ${error instanceof Error ? error.message : String(error)}`);

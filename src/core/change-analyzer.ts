@@ -55,7 +55,8 @@ export class ChangeAnalyzer {
       // Determina o tipo primário para todo o conjunto de alterações
       const primaryType = this.determinePrimaryTypeForChangeset(analyzedFiles);
       
-      spinner.succeed(chalk.green(`Análise concluída: ${analyzedFiles.length} arquivos analisados`));
+  // Removida mensagem de sucesso para unificar com analyze-changes.js
+  spinner.stop();
       
       // Verifica se existem breaking changes
       const breakingChanges = analyzedFiles.filter(file => file.isBreakingChange);
