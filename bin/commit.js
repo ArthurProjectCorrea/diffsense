@@ -19,12 +19,94 @@ import { commitByTypes } from './commit-modules/commit-by-types.js';
 // Configurando commander para CLI
 const program = new Command();
 
+// Importando biblioteca para tabelas de linha de comando
+import Table from 'cli-table3';
+
+// Função para gerar o texto de ajuda personalizado com estilo tabular mais compacto
+function generateCustomHelp() {
+  let output = '';
+  
+  // Cabeçalho principal com linha superior para destaque
+  output += chalk.cyan('====================================================\n');
+  output += chalk.cyan.bold('DiffSense Commit - ') + chalk.dim('v1.0.0') + '\n';
+  output += chalk.dim('Análise semântica de alterações e commit inteligente') + '\n';
+  output += chalk.cyan('====================================================\n');
+  
+  // Descrição curta
+  output += chalk.bold('🔍 SOBRE:') + '\n';
+  output += 'Ferramenta para análise de alterações de código e organização de commits.\n';
+  
+  // Tabela de opções estilo padrão do projeto (com bordas)
+  output += chalk.bold('⚙️  OPÇÕES:\n');
+  
+  const optionsTable = new Table({
+    head: [chalk.cyan('Opção'), chalk.cyan('Descrição')],
+    style: { head: [], border: [] },
+    colWidths: [25, 55],
+    wordWrap: true
+  });
+  
+  // Adicionar opções na tabela
+  optionsTable.push(
+    [chalk.green('-a, --analyzer'), 'Executa apenas a análise e exibe o resultado, sem realizar commits'],
+    [chalk.green('-ac, --autoComplete'), 'Realiza commits automáticos com descrições predefinidas baseadas na análise'],
+    [chalk.green('-v, --version'), 'Exibe a versão atual da ferramenta'],
+    [chalk.green('-h, --help'), 'Exibe este guia de ajuda']
+  );
+  
+  output += optionsTable.toString() + '\n\n';
+  
+  // Tabela de exemplos com o mesmo estilo das tabelas de análise
+  output += chalk.bold('💡 EXEMPLOS:\n');
+  
+  const examplesTable = new Table({
+    head: [chalk.cyan('Comando'), chalk.cyan('Descrição')],
+    style: { head: [], border: [] },
+    wordWrap: true
+  });
+  
+  examplesTable.push(
+    [chalk.yellow('$ diffsense'), 'Fluxo padrão interativo de commit'],
+    [chalk.yellow('$ diffsense --analyzer'), 'Apenas analisar alterações sem fazer commit'],
+    [chalk.yellow('$ diffsense --autoComplete'), 'Realizar commits automáticos com descrições geradas']
+  );
+  
+  output += examplesTable.toString() + '\n\n';
+  
+  // Documentação em formato tabular para manter consistência
+  output += chalk.bold('📚 DOCUMENTAÇÃO:\n');
+  
+  const docsTable = new Table({
+    style: { head: [], border: [] },
+    wordWrap: true
+  });
+  
+  docsTable.push(
+    ['Repositório GitHub:', chalk.blue('https://github.com/ArthurProjectCorrea/diffsense')],
+    ['Convenções de Commit:', chalk.blue('https://www.conventionalcommits.org/')]
+  );
+  
+  output += docsTable.toString() + '\n';
+  
+  return output;
+}
+
+// Verificar se está solicitando ajuda
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  // Exibir ajuda personalizada e sair
+  console.log(generateCustomHelp());
+  process.exit(0);
+}
+
+// Configurar o programa para o fluxo normal
 program
-  .name('diffsense commit')
-  .description('Realiza commits inteligentes baseados em análise semântica de alterações')
+  .name('diffsense')
+  .description('Ferramenta de análise semântica de alterações e commits organizados')
   .option('-a, --analyzer', 'Executa apenas a análise e exibe o resultado')
   .option('-ac, --autoComplete', 'Realiza commits automáticos com descrições predefinidas')
-  .version('1.0.0')
+  .version('1.0.0', '-v, --version', 'Exibe a versão atual da ferramenta')
+  .helpOption('-h, --help', 'Exibe informações de ajuda sobre os comandos disponíveis')
+  .addHelpCommand(false)
   .parse(process.argv);
 
 const options = program.opts();
