@@ -44,6 +44,8 @@ export interface FileChange {
   status?: FileStatus;
   additions?: number;
   deletions?: number;
+  isBreakingChange?: boolean;   // Indica se a alteração representa uma quebra de compatibilidade
+  breakingChangeReason?: string; // Razão pela qual foi classificada como breaking change
 }
 
 /**
@@ -57,4 +59,6 @@ export interface AnalysisResult {
   primaryType: ChangeType;
   baseBranch?: string;
   headBranch?: string;
+  hasBreakingChanges: boolean;  // Indica se há quebras de compatibilidade no conjunto de alterações
+  breakingChanges: FileChange[]; // Lista de alterações que são breaking changes
 }

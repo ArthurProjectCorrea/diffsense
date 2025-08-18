@@ -12,7 +12,7 @@ export class ResultFormatter {
    * @param result Resultado da análise
    */
   format(result: AnalysisResult): string {
-    const { files, summary, primaryType, baseBranch, headBranch } = result;
+    const { files, summary, primaryType, baseBranch, headBranch, hasBreakingChanges, breakingChanges } = result;
     let output = '';
     
     // Cabeçalho simples sem formatação elaborada
@@ -59,7 +59,14 @@ export class ResultFormatter {
     
     // Tipo primário
     output += chalk.bold('Tipo Primário: ') + this.formatChangeType(primaryType) + 
-      ` (${getChangeTypeDescription(primaryType)})\n\n`;
+      ` (${getChangeTypeDescription(primaryType)})`;
+    
+    // Destacar se há breaking changes
+    if (hasBreakingChanges) {
+      output += chalk.bold.red(' ⚠️ CONTÉM BREAKING CHANGES!');
+    }
+    
+    output += '\n\n';
     
     // Detalhes dos arquivos
     output += chalk.bold('Detalhes dos Arquivos:\n');
@@ -70,12 +77,13 @@ export class ResultFormatter {
           chalk.cyan('Status'),
           chalk.cyan('+/-'),
           chalk.cyan('Tipo'),
-          chalk.cyan('Todos')
+          chalk.cyan('Todos'),
+          chalk.cyan('Breaking')
         ],
         style: { head: [], border: [] },
         wordWrap: true,
         wrapOnWordBoundary: true,
-        colWidths: [40, 10, 10, 10, 20],
+        colWidths: [35, 8, 8, 8, 18, 13],
       });
       
       for (const file of files) {
@@ -93,13 +101,41 @@ export class ResultFormatter {
           file.status ? this.formatFileStatus(file.status) : '?',
           `+${file.additions || 0}/-${file.deletions || 0}`,
           file.primaryType ? this.formatChangeType(file.primaryType) : 'N/A',
-          file.changeTypes.map(type => this.formatChangeType(type)).join(', ')
+          file.changeTypes.map(type => this.formatChangeType(type)).join(', '),
+          file.isBreakingChange ? chalk.bold.red('⚠️ ' + (file.breakingChangeReason || 'Sim')) : ''
         ]);
       }
       
       output += filesTable.toString() + '\n';
     } else {
       output += 'Nenhum arquivo modificado.\n';
+    }
+    
+    // Seção especial para breaking changes
+    if (hasBreakingChanges && breakingChanges && breakingChanges.length > 0) {
+      output += '\n' + chalk.bold.red('⚠️ Breaking Changes Detectados:\n');
+      const breakingTable = new Table({
+        head: [
+          chalk.red('Arquivo'),
+          chalk.red('Razão')
+        ],
+        style: { head: [], border: [] },
+        wordWrap: true,
+        wrapOnWordBoundary: true,
+        colWidths: [40, 50],
+      });
+      
+      for (const file of breakingChanges) {
+        breakingTable.push([
+          file.filePath,
+          file.breakingChangeReason || 'Alteração incompatível detectada'
+        ]);
+      }
+      
+      output += breakingTable.toString() + '\n';
+      
+      output += chalk.yellow('\nObservação: Breaking changes precisam ser indicados no commit com "!" após o tipo.\n');
+      output += chalk.yellow('Exemplo: feat!: nova API incompatível com versão anterior\n');
     }
     
     return output;

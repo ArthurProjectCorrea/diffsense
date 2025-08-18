@@ -57,12 +57,18 @@ export class ChangeAnalyzer {
       
       spinner.succeed(chalk.green(`Análise concluída: ${analyzedFiles.length} arquivos analisados`));
       
+      // Verifica se existem breaking changes
+      const breakingChanges = analyzedFiles.filter(file => file.isBreakingChange);
+      const hasBreakingChanges = breakingChanges.length > 0;
+      
       return {
         files: analyzedFiles,
         summary,
         primaryType,
         baseBranch: base,
         headBranch: head,
+        hasBreakingChanges,
+        breakingChanges,
       };
     } catch (error) {
       spinner.fail(`Erro durante a análise: ${error instanceof Error ? error.message : String(error)}`);

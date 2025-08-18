@@ -17,6 +17,9 @@ export class DiffAnalyzer {
     const changeTypes = this.identifyChangeTypes(filePath, diff, status);
     const primaryType = this.determinePrimaryType(changeTypes);
     
+    // Detectar se esta alteração é uma breaking change
+    const { isBreakingChange, breakingChangeReason } = this.detectBreakingChange(filePath, diff, status, primaryType);
+    
     return {
       filePath,
       changeTypes,
@@ -25,6 +28,8 @@ export class DiffAnalyzer {
       status,
       additions,
       deletions,
+      isBreakingChange,
+      breakingChangeReason,
     };
   }
 
@@ -183,5 +188,124 @@ export class DiffAnalyzer {
     
     // Ordena os tipos por prioridade e retorna o de maior prioridade (menor número)
     return changeTypes.sort((a, b) => CHANGE_PRIORITY[a] - CHANGE_PRIORITY[b])[0];
+  }
+
+  /**
+   * Detecta se uma alteração representa uma breaking change (quebra de compatibilidade)
+   * @param filePath Caminho do arquivo
+   * @param diff Conteúdo do diff
+   * @param status Status do arquivo
+   * @param primaryType Tipo primário da alteração
+   * @returns Objeto indicando se é uma breaking change e a razão
+   */
+  private detectBreakingChange(filePath: string, diff: string, status: FileStatus, primaryType?: ChangeType): {
+    isBreakingChange: boolean;
+    breakingChangeReason?: string;
+  } {
+    // Breaking changes são geralmente relacionadas a alterações em APIs públicas
+    // ou mudanças incompatíveis com versões anteriores
+    
+    const lines = diff.split('\n');
+    let isBreakingChange = false;
+    let breakingChangeReason: string | undefined;
+    
+    // Padrões que indicam possíveis breaking changes
+    const breakingChangePatterns = [
+      // Mudanças em assinaturas de funções/métodos
+      {
+        pattern: /-\s*(export|public)\s+(function|class|interface|type|enum|const)\s+(\w+)/i,
+        reason: 'Removeu ou modificou API pública'
+      },
+      {
+        pattern: /-\s*export\s+{[^}]*}/i,
+        reason: 'Removeu ou modificou exportações'
+      },
+      // Mudança de tipos em parâmetros ou retornos de função
+      {
+        pattern: /[+-]\s*(\w+)(?:\s*:\s*|\(.*\)\s*:)(?!.*\1)/i,
+        reason: 'Alterou tipos de parâmetros ou retornos'
+      },
+      // Mudança em parâmetros obrigatórios
+      {
+        pattern: /\+\s*function\s+\w+\s*\([^)]*\?[^)]*\)/i,
+        reason: 'Mudou parâmetros obrigatórios para opcionais'
+      },
+      {
+        pattern: /-\s*function\s+\w+\s*\([^)]*\?[^)]*\)/i,
+        reason: 'Mudou parâmetros opcionais para obrigatórios'
+      },
+      // Comentários explícitos sobre breaking changes
+      {
+        pattern: /\+\s*\/\/\s*BREAKING CHANGE:/i,
+        reason: 'Comentário explícito de breaking change'
+      },
+      {
+        pattern: /\+\s*\/\*\s*BREAKING CHANGE:/i,
+        reason: 'Comentário explícito de breaking change'
+      },
+      {
+        pattern: /\+\s*\*\s*@deprecated/i,
+        reason: 'Marcou API como deprecated'
+      },
+      // Arquivos de API removidos
+      {
+        pattern: /-\s*api\./i,
+        reason: 'Removeu ou modificou arquivo de API'
+      }
+    ];
+    
+    // Verificações específicas para determinados tipos de arquivos
+    if (
+      filePath.includes('/api/') || 
+      filePath.includes('interface.') || 
+      filePath.endsWith('.d.ts') ||
+      filePath.includes('public')
+    ) {
+      // Arquivos de API/interface têm maior probabilidade de conter breaking changes
+      for (const line of lines) {
+        for (const { pattern, reason } of breakingChangePatterns) {
+          if (pattern.test(line)) {
+            isBreakingChange = true;
+            breakingChangeReason = reason;
+            break;
+          }
+        }
+        if (isBreakingChange) break;
+      }
+    }
+    
+    // Verifica casos específicos para cada tipo de alteração primária
+    if (primaryType === ChangeType.FEAT || primaryType === ChangeType.REFACTOR) {
+      // Mudanças em características existentes têm maior chance de serem breaking changes
+      for (const line of lines) {
+        // Verifica se há remoções significativas que poderiam indicar mudanças incompatíveis
+        if (line.startsWith('-') && !line.startsWith('--')) {
+          for (const { pattern, reason } of breakingChangePatterns) {
+            if (pattern.test(line)) {
+              isBreakingChange = true;
+              breakingChangeReason = reason;
+              break;
+            }
+          }
+        }
+        if (isBreakingChange) break;
+      }
+    }
+    
+    // Arquivo de API removido é definitivamente uma breaking change
+    if (status === FileStatus.DELETED && (
+      filePath.includes('/api/') || 
+      filePath.includes('interface.') || 
+      filePath.endsWith('.d.ts') ||
+      filePath.includes('public')
+    )) {
+      isBreakingChange = true;
+      breakingChangeReason = 'Removeu arquivo de API';
+    }
+    
+    return {
+      isBreakingChange,
+      breakingChangeReason
+    };
   }
 }
