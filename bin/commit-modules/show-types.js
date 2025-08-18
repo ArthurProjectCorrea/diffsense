@@ -2,6 +2,7 @@
  * Módulo para exibir os tipos de commit suportados
  */
 import chalk from 'chalk';
+import boxen from 'boxen';
 import Table from 'cli-table3';
 import { ChangeType, CHANGE_PRIORITY } from '../../dist/types/index.js';
 import { getChangeTypeDescription } from '../../dist/index.js';
@@ -10,10 +11,12 @@ import { getChangeTypeDescription } from '../../dist/index.js';
  * Exibe a lista de tipos de commit disponíveis
  */
 export function showCommitTypes() {
-  // Cabeçalho
-  console.log(chalk.cyan('===================================================='));
-  console.log(chalk.cyan.bold('DiffSense - Tipos de Commit Semântico'));
-  console.log(chalk.cyan('===================================================='));
+  // Banner padronizado
+  const typesBanner = boxen(
+    chalk.cyan.bold('DiffSense - Tipos de Commit Semântico'),
+    { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'cyan' }
+  );
+  console.log(typesBanner);
   
   console.log(chalk.bold('\n📋 TIPOS DE COMMIT SUPORTADOS:\n'));
   

@@ -16,7 +16,8 @@ export async function analyzeChanges() {
   try {
     // Analisar as alterações entre HEAD^ (commit anterior) e HEAD (estado atual)
     const result = await analyze('HEAD^', 'HEAD');
-    spinner.succeed('✅ Análise concluída!');
+  // Remover mensagem de sucesso para manter layout consistente
+  spinner.stop();
     
     // Exibir o resultado da análise
     const formatter = new ResultFormatter();

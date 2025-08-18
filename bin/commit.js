@@ -35,11 +35,13 @@ import Table from 'cli-table3';
 function generateCustomHelp() {
   let output = '';
   
-  // Cabeçalho principal com linha superior para destaque
-  output += chalk.cyan('====================================================\n');
-  output += chalk.cyan.bold('DiffSense Commit - ') + chalk.dim('v1.0.0') + '\n';
-  output += chalk.dim('Análise semântica de alterações e commit inteligente') + '\n';
-  output += chalk.cyan('====================================================\n');
+  // Banner padrão
+    // Banner padrão
+    const helpBanner = boxen(
+      chalk.cyan.bold('DiffSense Commit') + '\n' + chalk.dim('Análise semântica de alterações e commit inteligente'),
+      { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'cyan' }
+    );
+    output += helpBanner + '\n';
   
   // Descrição curta
   output += chalk.bold('🔍 SOBRE:') + '\n';
@@ -106,14 +108,18 @@ function generateCustomHelp() {
 
 // Verificar se está solicitando ajuda
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
-  // Exibir ajuda personalizada e sair
+  // Animação de carregamento da ajuda
+  const spinner = ora('Carregando guia de ajuda...').start();
+  spinner.succeed(chalk.green('Guia de ajuda pronto!'));
   console.log(generateCustomHelp());
   process.exit(0);
 }
 
 // Verificar se está solicitando a lista de tipos
 if (process.argv.includes('--types') || process.argv.includes('-t')) {
-  // Exibir lista de tipos de commit e sair
+  // Animação de carregamento dos tipos de commit
+  const spinner = ora('Carregando tipos de commit...').start();
+  spinner.succeed(chalk.green('Tipos de commit prontos!'));
   showCommitTypes();
   process.exit(0);
 }
@@ -186,7 +192,13 @@ async function run() {
     
     // Etapa 3.1: Verificar se é apenas para análise
     if (options.analyzer) {
-      console.log(chalk.yellow('Modo de análise. Finalizando sem realizar commits.'));
+      // Banner indicando execução no modo análise
+      console.log(
+        boxen(
+          chalk.yellow('Modo Análise') + '\n' + chalk.dim('Nenhum commit foi realizado.'),
+          { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'yellow' }
+        )
+      );
       return;
     }
     
