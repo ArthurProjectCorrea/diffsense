@@ -286,7 +286,7 @@ export async function commitByTypes(analysisResult, autoComplete) {
   // Exibir resumo final
   if (commitCount > 0) {
     console.log(boxen(
-      chalk.cyan.bold(`${commitCount} commits realizados com sucesso!`) + 
+      chalk.cyan.bold(`${commitCount} commits realizados com sucesso!`)+
       '\n\n' + chalk.dim('Você pode usar "git push" para enviar as alterações para o repositório remoto.'),
       {
         padding: 1,
@@ -299,3 +299,6 @@ export async function commitByTypes(analysisResult, autoComplete) {
     console.log(chalk.yellow('\nNenhum commit foi realizado.'));
   }
 }
+
+// Exportar funções de commit para uso no fluxo rápido
+export { commitFiles, commitBreakingChange };

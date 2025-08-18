@@ -15,6 +15,8 @@ import { stageAllFiles } from './commit-modules/stage-files.js';
 import { analyzeChanges } from './commit-modules/analyze-changes.js';
 import { confirmCommit } from './commit-modules/confirm-commit.js';
 import { commitByTypes } from './commit-modules/commit-by-types.js';
+import inquirer from 'inquirer';
+import { commitFiles, commitBreakingChange } from './commit-modules/commit-by-types.js';
 
 // Importar tipos e funções do core
 import { ChangeType, CHANGE_PRIORITY } from '../dist/types/index.js';
@@ -144,9 +146,41 @@ console.log(boxen(
 
 async function run() {
   try {
+    // Fluxo custom: commit de um único tipo via args
+    const args = program.args;
+    const validTypes = ['feat','fix','docs','refactor','test','chore'];
+    if (args.length >= 2) {
+      const typeArg = args[0];
+      const isBreaking = typeArg.endsWith('!');
+      const baseType = isBreaking ? typeArg.slice(0, -1) : typeArg;
+      if (validTypes.includes(baseType)) {
+        const description = args.slice(1).join(' ');
+        await stageAllFiles();
+        const analysisResult = await analyzeChanges();
+        const shouldProceed = await confirmCommit();
+        if (!shouldProceed) return;
+        const filesOfType = analysisResult.files.filter(
+          f => f.primaryType === baseType && f.isBreakingChange === isBreaking
+        );
+        if (filesOfType.length === 0) {
+          console.log(chalk.yellow(`Nenhum arquivo do tipo ${baseType}${isBreaking ? '!' : ''}`));
+          return;
+        }
+        if (isBreaking) {
+          const { breakingDesc } = await inquirer.prompt([{
+            type: 'input', name: 'breakingDesc',
+            message: chalk.red('Descreva o breaking change:'),
+            validate: input => input ? true : 'Descrição obrigatória'
+          }]);
+          await commitBreakingChange(`${baseType}!`, filesOfType, description, breakingDesc);
+        } else {
+          await commitFiles(baseType, filesOfType, description);
+        }
+        return;
+      }
+    }
     // Etapa 1: Adicionar arquivos ao stage
     await stageAllFiles();
-
     // Etapa 2: Analisar alterações
     const analysisResult = await analyzeChanges();
     
