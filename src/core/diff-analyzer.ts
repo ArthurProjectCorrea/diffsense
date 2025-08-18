@@ -3,6 +3,7 @@ import { ChangeType, CHANGE_PRIORITY, FileChange, FileStatus } from '../types/in
 /**
  * Analisa o conteúdo do diff para determinar os tipos de alteração
  */
+// declare function require(moduleName: string): any;
 export class DiffAnalyzer {
   /**
    * Analisa um diff e identifica os tipos de alteração
@@ -16,21 +17,9 @@ export class DiffAnalyzer {
   analyzeFile(filePath: string, diff: string, status: FileStatus, additions: number, deletions: number): FileChange {
     const changeTypes = this.identifyChangeTypes(filePath, diff, status);
     const primaryType = this.determinePrimaryType(changeTypes);
-    
     // Detectar se esta alteração é uma breaking change
     const { isBreakingChange, breakingChangeReason } = this.detectBreakingChange(filePath, diff, status, primaryType);
-    
-    return {
-      filePath,
-      changeTypes,
-      diff,
-      primaryType,
-      status,
-      additions,
-      deletions,
-      isBreakingChange,
-      breakingChangeReason,
-    };
+    return { filePath, changeTypes, diff, primaryType, status, additions, deletions, isBreakingChange, breakingChangeReason };
   }
 
   /**
@@ -42,7 +31,16 @@ export class DiffAnalyzer {
    */
   private identifyChangeTypes(filePath: string, diff: string, status: FileStatus): ChangeType[] {
     const changeTypes: Set<ChangeType> = new Set();
-    
+    // Configuração e scripts são chores
+    const lowerPath = filePath.toLowerCase();
+    if (
+      lowerPath.endsWith('.json') || lowerPath.endsWith('.yaml') || lowerPath.endsWith('.yml') ||
+      lowerPath.includes('.env') ||
+      filePath.startsWith('scripts/') || filePath.includes('/scripts/') || filePath.startsWith('bin/')
+    ) {
+      changeTypes.add(ChangeType.CHORE);
+      return Array.from(changeTypes);
+    }
     // Classificação baseada no path do arquivo
     // Documentação
     if (
@@ -80,6 +78,10 @@ export class DiffAnalyzer {
       filePath.includes('yarn.lock') ||
       filePath.includes('package-lock.json')
     ) {
+      changeTypes.add(ChangeType.CHORE);
+    }
+    // Arquivos de configuração (YAML, JSON) fora de código-fonte TS/JS
+    else if (/(?:\.ya?ml|\.json)$/.test(filePath) && !filePath.includes('/src/')) {
       changeTypes.add(ChangeType.CHORE);
     }
     
@@ -163,10 +165,19 @@ export class DiffAnalyzer {
       changeTypes.add(ChangeType.FEAT);
     }
     
-    // Se não identificou nenhum tipo específico, assume que é uma refatoração
+    // Se nenhum tipo específico foi identificado ainda
     if (changeTypes.size === 0) {
-      // Arquivo foi modificado, mas não conseguimos detectar o tipo específico
-      changeTypes.add(ChangeType.REFACTOR);
+      // Detectar extensão de arquivo manualmente
+      const idx = filePath.lastIndexOf('.');
+      const ext = idx !== -1 ? filePath.substring(idx).toLowerCase() : '';
+      const codeExts = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
+      // Arquivos não JS/TS são tratados como tarefas de manutenção
+      if (!codeExts.includes(ext)) {
+        changeTypes.add(ChangeType.CHORE);
+      } else {
+        // Código JS/TS sem classificação específica é refatoração
+        changeTypes.add(ChangeType.REFACTOR);
+      }
     }
     
     return Array.from(changeTypes);
