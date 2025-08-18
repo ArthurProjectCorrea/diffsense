@@ -16,6 +16,13 @@ import { analyzeChanges } from './commit-modules/analyze-changes.js';
 import { confirmCommit } from './commit-modules/confirm-commit.js';
 import { commitByTypes } from './commit-modules/commit-by-types.js';
 
+// Importar tipos e funções do core
+import { ChangeType, CHANGE_PRIORITY } from '../dist/types/index.js';
+import { getChangeTypeDescription } from '../dist/index.js';
+
+// Importar o módulo para mostrar os tipos de commit
+import { showCommitTypes } from './commit-modules/show-types.js';
+
 // Configurando commander para CLI
 const program = new Command();
 
@@ -49,7 +56,8 @@ function generateCustomHelp() {
   // Adicionar opções na tabela
   optionsTable.push(
     [chalk.green('-a, --analyzer'), 'Executa apenas a análise e exibe o resultado, sem realizar commits'],
-    [chalk.green('-ac, --autoComplete'), 'Realiza commits automáticos com descrições predefinidas baseadas na análise'],
+    [chalk.green('-ac, --autoComplete'), 'Realiza commits automáticos com descrições predefinidas baseadas na análise (inclui tratamento automático para breaking changes)'],
+    [chalk.green('-t, --types'), 'Lista todos os tipos de commit suportados com descrições e exemplos'],
     [chalk.green('-v, --version'), 'Exibe a versão atual da ferramenta'],
     [chalk.green('-h, --help'), 'Exibe este guia de ajuda']
   );
@@ -62,13 +70,16 @@ function generateCustomHelp() {
   const examplesTable = new Table({
     head: [chalk.cyan('Comando'), chalk.cyan('Descrição')],
     style: { head: [], border: [] },
-    wordWrap: true
+    wordWrap: true,
+    wrapOnWordBoundary: true,
+    colWidths: [30, 50]
   });
   
   examplesTable.push(
     [chalk.yellow('$ diffsense'), 'Fluxo padrão interativo de commit'],
     [chalk.yellow('$ diffsense --analyzer'), 'Apenas analisar alterações sem fazer commit'],
-    [chalk.yellow('$ diffsense --autoComplete'), 'Realizar commits automáticos com descrições geradas']
+    [chalk.yellow('$ diffsense --autoComplete'), 'Realizar commits automáticos com descrições geradas (incluindo breaking changes)'],
+    [chalk.yellow('$ diffsense --types'), 'Listar todos os tipos de commit suportados']
   );
   
   output += examplesTable.toString() + '\n\n';
@@ -98,12 +109,20 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.exit(0);
 }
 
+// Verificar se está solicitando a lista de tipos
+if (process.argv.includes('--types') || process.argv.includes('-t')) {
+  // Exibir lista de tipos de commit e sair
+  showCommitTypes();
+  process.exit(0);
+}
+
 // Configurar o programa para o fluxo normal
 program
   .name('diffsense')
   .description('Ferramenta de análise semântica de alterações e commits organizados')
   .option('-a, --analyzer', 'Executa apenas a análise e exibe o resultado')
   .option('-ac, --autoComplete', 'Realiza commits automáticos com descrições predefinidas')
+  .option('-t, --types', 'Lista todos os tipos de commit suportados com descrições e exemplos')
   .version('1.0.0', '-v, --version', 'Exibe a versão atual da ferramenta')
   .helpOption('-h, --help', 'Exibe informações de ajuda sobre os comandos disponíveis')
   .addHelpCommand(false)
