@@ -16,24 +16,16 @@
     "commit:auto": "node bin/commit.js --autoComplete",
     "check-types": "node scripts/animated-check-types.js",
     "clean": "pnpm dlx rimraf node_modules dist pnpm-lock.yaml",
-    "reinstall": "pnpm clean && pnpm install",
-    "update-deps": "pnpm update --latest",
     "lint": "node scripts/animated-lint.js",
     "lint:fix": "pnpm exec eslint . --ext .ts --fix",
-    "wiki:sync": "pnpm run build && node scripts/sync-wiki.js",
-  "ci": "pnpm run lint && pnpm run check-types",
+
   "diffsense:feat": "node bin/commit.js feat",
   "diffsense:fix": "node bin/commit.js fix",
   "diffsense:docs": "node bin/commit.js docs",
   "diffsense:refactor": "node bin/commit.js refactor",
   "diffsense:test": "node bin/commit.js test",
-  "diffsense:chore": "node bin/commit.js chore",
-    "prepare": "pnpm run build",
-    "postinstall": "node scripts/postinstall.js",
-    "prepublishOnly": "pnpm run ci && pnpm run build",
-    "preversion": "pnpm run ci",
-    "version": "pnpm run build",
-    "postversion": "git push && git push --tags"
+  "diffsense:chore": "node bin/commit.js chore"
+
   },
   "files": [
     "dist/",
