@@ -9,18 +9,22 @@ import boxen from 'boxen';
  * Exibe um alerta sobre o processo de commit
  */
 function showCommitAlert() {
-  console.log(boxen(
-    chalk.yellow('⚠️  ATENÇÃO ⚠️\n\n') +
-    'Cada tipo de alteração será commitado separadamente.\n' +
-    'Você fornecerá uma descrição para cada tipo de alteração.\n' +
+  const message = [
+    '⚠️  ATENÇÃO ⚠️',
+    '',
+    'Cada tipo de alteração será commitado separadamente.',
+    'Você fornecerá uma descrição para cada tipo de alteração.',
     'Os arquivos serão agrupados por tipo de alteração nos commits.',
-    {
+  ].join('\n');
+  console.log(
+    boxen(chalk.yellow(message), {
       padding: 1,
       margin: 1,
       borderStyle: 'round',
       borderColor: 'yellow',
-    }
-  ));
+      align: 'center'
+    })
+  );
 }
 
 /**
