@@ -1,0 +1,92 @@
+{
+  "name": "@deffteste",
+  "version": "1.0.0",
+  "description": "Ferramenta inteligente para análise de alterações de código e geração de commits semânticos automáticos.",
+  "homepage": "https://github.com/ArthurProjectCorrea/diffsense#readme",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "diffsense": "bin/commit.js"
+  },
+  "scripts": {
+    "build": "node scripts/animated-build.js",
+    "commit": "node bin/commit.js",
+    "commit:analyzer": "node bin/commit.js --analyzer",
+    "commit:auto": "node bin/commit.js --autoComplete",
+    "check-types": "node scripts/animated-check-types.js",
+    "clean": "pnpm dlx rimraf node_modules dist pnpm-lock.yaml",
+    "lint": "node scripts/animated-lint.js",
+  "lint:fix": "pnpm exec eslint . --ext .ts --fix",
+  "diffsense:feat": "node bin/commit.js feat",
+  "diffsense:fix": "node bin/commit.js fix",
+  "diffsense:docs": "node bin/commit.js docs",
+  "diffsense:refactor": "node bin/commit.js refactor",
+  "diffsense:test": "node bin/commit.js test",
+  "diffsense:chore": "node bin/commit.js chore",
+  "show-scopes": "node scripts/show-scopes.js"
+
+  },
+  "files": [
+    "dist/",
+    "bin/",
+    "src/config/default-rules.yaml",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "docs/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArthurProjectCorrea/diffsense.git"
+  },
+  "keywords": [
+    "git",
+    "diff",
+    "commit",
+    "semantic-commit",
+    "analysis",
+    "typescript",
+    "conventional-commits",
+    "code-analysis",
+    "semantic-versioning",
+    "ast",
+    "developer-tools",
+    "commit-by-type"
+  ],
+  "author": "Arthur Correa",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/minimatch": "^5.1.2",
+  "@types/node": "^20.10.5",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "boxen": "^8.0.1",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^11.1.0",
+    "gradient-string": "^3.0.0",
+    "inquirer": "^12.9.2",
+    "listr": "^0.14.3",
+    "minimatch": "^9.0.3",
+    "ora": "^8.2.0",
+    "simple-git": "^3.21.0",
+    "ts-morph": "^21.0.1",
+  "yaml": "^2.3.4",
+  "ignore": "^5.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/ArthurProjectCorrea/diffsense/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
