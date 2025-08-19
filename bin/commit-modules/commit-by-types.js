@@ -178,6 +178,8 @@ export async function commitByTypes(analysisResult, autoComplete) {
   // Mapear arquivos por escopo
   const filePaths = files.map(f => f.filePath);
   const scopeGroups = classifyFilesByScope(filePaths, scopes);
+  // Mapear cada escopo ao seu diretório para identificar escopo raiz
+  const scopeDirs = Object.fromEntries(scopes.map(s => [s.name, s.dir]));
   // Contador de commits realizados
   let commitCount = 0;
   // Definir variáveis antigas para compatibilidade e evitar ReferenceError
@@ -203,7 +205,9 @@ export async function commitByTypes(analysisResult, autoComplete) {
     for (const type of Object.keys(normalByType)) {
       const group = normalByType[type];
       if (group.length === 0) continue;
-      const commitScope = `${type}(${scopeName})`;
+      // Se escopo raiz (dir vazio), não adiciona sufixo '(escopo)'
+      const isRoot = scopeDirs[scopeName] === '';
+      const commitScope = isRoot ? type : `${type}(${scopeName})`;
       const message = autoComplete ? AUTO_DESCRIPTIONS[type] : await promptCommitMessage(type, group.length);
       const ok = await commitFiles(commitScope, group, message);
       if (ok) commitCount++;
@@ -212,7 +216,9 @@ export async function commitByTypes(analysisResult, autoComplete) {
     for (const type of Object.keys(breakingByType)) {
       const group = breakingByType[type];
       if (group.length === 0) continue;
-      const commitScope = `${type}!(${scopeName})`;
+      // Se escopo raiz, commita sem '(escopo)'
+      const isRoot = scopeDirs[scopeName] === '';
+      const commitScope = isRoot ? `${type}!` : `${type}!(${scopeName})`;
       const message = autoComplete ? AUTO_DESCRIPTIONS[type] : await promptCommitMessage(type, group.length);
       const breakingDesc = autoComplete ? AUTO_BREAKING_CHANGE_DESCRIPTIONS[type] : await promptBreakingMessage(type, group.length);
       const ok = await commitBreakingChange(commitScope, group, message, breakingDesc);
