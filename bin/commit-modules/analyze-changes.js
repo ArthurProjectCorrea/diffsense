@@ -21,7 +21,7 @@ export async function analyzeChanges() {
     spinner.stop();
     console.log(
       boxen(
-        chalk.green.bold(`✔ Análise concluída: ${result.files.length} arquivos analisados`),
+        chalk.green.bold(`Análise concluída: ${result.files.length} arquivos analisados`),
         { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'green' }
       )
     );
