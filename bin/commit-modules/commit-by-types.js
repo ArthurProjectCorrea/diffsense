@@ -178,6 +178,11 @@ export async function commitByTypes(analysisResult, autoComplete) {
   // Mapear arquivos por escopo
   const filePaths = files.map(f => f.filePath);
   const scopeGroups = classifyFilesByScope(filePaths, scopes);
+  // Definir variáveis antigas para compatibilidade e evitar ReferenceError
+  const normalCommitTypes = [];
+  const breakingCommitTypes = [];
+  const normalFilesByType = {};
+  const breakingFilesByType = {};
   
   // Para cada escopo, agrupar por tipo e commitar
   for (const scopeName of Object.keys(scopeGroups)) {
@@ -208,121 +213,6 @@ export async function commitByTypes(analysisResult, autoComplete) {
       let message = autoComplete ? AUTO_DESCRIPTIONS[type] : await promptCommitMessage(type, group.length);
       const breakingDesc = autoComplete ? AUTO_BREAKING_CHANGE_DESCRIPTIONS[type] : await promptBreakingMessage(type, group.length);
       await commitBreakingChange(commitScope, group, message, breakingDesc);
-    }
-  }
-  
-  if (normalCommitTypes.length === 0 && breakingCommitTypes.length === 0) {
-    console.log(chalk.yellow('Nenhum tipo de alteração identificado para commit.'));
-    return;
-  }
-  
-  console.log(chalk.cyan(`\n📦 Tipos de alteração normais: ${normalCommitTypes.join(', ') || 'Nenhum'}`));
-  console.log(chalk.red(`\n📦 Tipos de alteração com breaking changes: ${breakingCommitTypes.join(', ') || 'Nenhum'}`));
-  
-  // Contador de commits realizados
-  let commitCount = 0;
-  
-  // Processar primeiro os tipos de alteração normais
-  for (const type of normalCommitTypes) {
-    const typedFiles = normalFilesByType[type];
-    
-    if (!typedFiles || typedFiles.length === 0) {
-      continue;
-    }
-    
-    console.log(chalk.cyan(`\n🔖 Processando alterações normais do tipo: ${type} - ${getChangeTypeDescription(type)}`));
-    console.log(chalk.dim(`${typedFiles.length} arquivos classificados como "${type}"`));
-    
-    // Definir a mensagem do commit
-    let commitMessage = '';
-    
-    if (autoComplete) {
-      // Usar descrição predefinida
-      commitMessage = AUTO_DESCRIPTIONS[type] || `atualiza arquivos do tipo ${type}`;
-      console.log(chalk.dim(`Usando descrição automática: "${commitMessage}"`));
-    } else {
-      // Solicitar descrição do usuário
-      commitMessage = await promptCommitMessage(type, typedFiles.length);
-    }
-    
-    // Realizar o commit para arquivos normais
-    const success = await commitFiles(type, typedFiles, commitMessage);
-    
-    if (success) {
-      commitCount++;
-    }
-  }
-  
-  // Processar os tipos de alteração com breaking changes
-  for (const type of breakingCommitTypes) {
-    const typedFiles = breakingFilesByType[type];
-    
-    if (!typedFiles || typedFiles.length === 0) {
-      continue;
-    }
-    
-    console.log(chalk.red(`\n⚠️ Processando alterações BREAKING CHANGE do tipo: ${type} - ${getChangeTypeDescription(type)}`));
-    console.log(chalk.dim(`${typedFiles.length} arquivos classificados como "${type}" com breaking changes`));
-    
-    // Listar os arquivos com breaking changes
-    typedFiles.forEach(file => {
-      console.log(chalk.yellow(`- ${file.filePath}: ${file.breakingChangeReason || 'Alteração incompatível'}`));
-    });
-    
-    // Definir a mensagem do commit para breaking change
-    let commitMessage = '';
-    let breakingChangeDescription = '';
-    
-    if (autoComplete) {
-      // Usar descrição predefinida para breaking change
-      commitMessage = AUTO_DESCRIPTIONS[type] || `atualiza arquivos do tipo ${type}`;
-      
-      // Obter razões específicas dos breaking changes encontrados
-      const reasons = typedFiles
-        .filter(file => file.breakingChangeReason)
-        .map(file => file.breakingChangeReason);
-      
-      // Se tivermos razões específicas, usar a primeira como descrição
-      if (reasons.length > 0) {
-        breakingChangeDescription = reasons[0];
-      } else {
-        // Caso contrário, usar descrição genérica baseada no tipo
-        breakingChangeDescription = AUTO_BREAKING_CHANGE_DESCRIPTIONS[type] || 
-          'Alteração incompatível detectada automaticamente';
-      }
-      
-      console.log(chalk.dim(`Usando descrição automática: "${commitMessage}"`));
-      console.log(chalk.dim(`Descrição do breaking change: "${breakingChangeDescription}"`));
-    } else {
-      // Solicitar descrição do commit
-      commitMessage = await promptCommitMessage(type, typedFiles.length);
-      
-      // Solicitar descrição específica do breaking change
-      const { breakingChange } = await inquirer.prompt([
-        {
-          type: 'input',
-          name: 'breakingChange',
-          message: chalk.red('Descreva o breaking change (alteração incompatível):'),
-          validate: (input) => {
-            if (!input) return 'A descrição do breaking change é obrigatória';
-            return true;
-          }
-        }
-      ]);
-      
-      breakingChangeDescription = breakingChange;
-    }
-    
-    // Realizar o commit para breaking changes (adicionando o marcador '!')
-    const commitType = `${type}!`;
-    const success = await commitBreakingChange(commitType, typedFiles, commitMessage, breakingChangeDescription);
-    
-    if (success) {
-      commitCount++;
-    }
-    
-    if (success) {
-      commitCount++;
     }
   }
   
