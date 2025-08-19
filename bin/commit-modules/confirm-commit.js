@@ -10,7 +10,7 @@ import boxen from 'boxen';
  */
 function showCommitAlert() {
   const message = [
-    '⚠️  ATENÇÃO ⚠️',
+    '  ATENÇÃO ',
     '',
     'Cada tipo de alteração será commitado separadamente.',
     'Você fornecerá uma descrição para cada tipo de alteração.',

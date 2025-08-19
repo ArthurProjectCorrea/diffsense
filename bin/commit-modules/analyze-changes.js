@@ -3,6 +3,7 @@
  */
 import ora from 'ora';
 import chalk from 'chalk';
+import boxen from 'boxen';
 import { analyzeChanges as analyze } from '../../dist/index.js';
 import { ResultFormatter } from '../../dist/utils/formatter.js';
 
@@ -16,14 +17,17 @@ export async function analyzeChanges() {
   try {
     // Analisar as alterações entre HEAD^ (commit anterior) e HEAD (estado atual)
     const result = await analyze('HEAD^', 'HEAD');
-  // Remover mensagem de sucesso para manter layout consistente
-  spinner.stop();
-    
-    // Exibir o resultado da análise
+    // Concluir spinner e exibir banner padronizado de conclusão
+    spinner.stop();
+    console.log(
+      boxen(
+        chalk.green.bold(`✔ Análise concluída: ${result.files.length} arquivos analisados`),
+        { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'green' }
+      )
+    );
+    // Exibir resultado da análise formatado
     const formatter = new ResultFormatter();
-    const output = formatter.format(result);
-    console.log(output);
-    
+    console.log(formatter.format(result));
     return result;
   } catch (error) {
     spinner.fail('❌ Erro na análise');
