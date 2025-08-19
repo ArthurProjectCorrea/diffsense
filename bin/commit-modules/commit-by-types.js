@@ -8,6 +8,8 @@ import ora from 'ora';
 import chalk from 'chalk';
 import boxen from 'boxen';
 import { groupFilesByType } from './analyze-changes.js';
+import { findPackageScopes } from '../../src/utils/scope-finder.js';
+import { classifyFilesByScope } from '../../src/utils/scope-classifier.js';
 import { getChangeTypeDescription } from '../../dist/index.js';
 
 const execAsync = promisify(exec);
@@ -55,6 +57,24 @@ async function promptCommitMessage(type, fileCount) {
   ]);
   
   return commitMessage;
+}
+/**
+ * Solicita descrição do breaking change para um tipo de alteração
+ * @param {string} type - Tipo de alteração (feat, fix, etc)
+ * @param {number} fileCount - Quantidade de arquivos deste tipo
+ * @returns {Promise<string>} - Descrição do breaking change fornecida pelo usuário
+ */
+async function promptBreakingMessage(type, fileCount) {
+  const typeDescription = `${type} (${fileCount} arquivos com breaking change)`;
+  const { breakingChange } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'breakingChange',
+      message: `Descreva o breaking change ${chalk.red(typeDescription)} (incompatível):`,
+      validate: input => input ? true : 'Descrição do breaking change é obrigatória'
+    }
+  ]);
+  return breakingChange;
 }
 
 /**
@@ -153,20 +173,43 @@ async function commitBreakingChange(type, files, message, breakingChangeDesc) {
  */
 export async function commitByTypes(analysisResult, autoComplete) {
   const { files } = analysisResult;
+  // Encontrar escopos no projeto
+  const scopes = await findPackageScopes(process.cwd());
+  // Mapear arquivos por escopo
+  const filePaths = files.map(f => f.filePath);
+  const scopeGroups = classifyFilesByScope(filePaths, scopes);
   
-  // Separar arquivos normais e breaking changes
-  const normalFiles = files.filter(file => !file.isBreakingChange);
-  const breakingFiles = files.filter(file => file.isBreakingChange);
-  
-  // Agrupar arquivos normais por tipo primário
-  const normalFilesByType = groupFilesByType(normalFiles);
-  
-  // Agrupar breaking changes por tipo primário
-  const breakingFilesByType = groupFilesByType(breakingFiles);
-  
-  // Listar todos os tipos de commit (normais e breaking)
-  const normalCommitTypes = Object.keys(normalFilesByType);
-  const breakingCommitTypes = Object.keys(breakingFilesByType);
+  // Para cada escopo, agrupar por tipo e commitar
+  for (const scopeName of Object.keys(scopeGroups)) {
+    const pathsInScope = scopeGroups[scopeName];
+    if (!pathsInScope.length) continue;
+    // Filtrar objetos de arquivos que pertencem a este escopo
+    const scopedFiles = files.filter(f => pathsInScope.includes(f.filePath));
+    // Separar normais e breaking
+    const normalFiles = scopedFiles.filter(f => !f.isBreakingChange);
+    const breakingFiles = scopedFiles.filter(f => f.isBreakingChange);
+    // Agrupar por tipo
+    const normalByType = groupFilesByType(normalFiles);
+    const breakingByType = groupFilesByType(breakingFiles);
+    
+    // Realizar commits normais
+    for (const type of Object.keys(normalByType)) {
+      const group = normalByType[type];
+      if (group.length === 0) continue;
+      const commitScope = `${type}(${scopeName})`;
+      let message = autoComplete ? AUTO_DESCRIPTIONS[type] : await promptCommitMessage(type, group.length);
+      await commitFiles(commitScope, group, message);
+    }
+    // Realizar commits breaking
+    for (const type of Object.keys(breakingByType)) {
+      const group = breakingByType[type];
+      if (group.length === 0) continue;
+      const commitScope = `${type}!(${scopeName})`;
+      let message = autoComplete ? AUTO_DESCRIPTIONS[type] : await promptCommitMessage(type, group.length);
+      const breakingDesc = autoComplete ? AUTO_BREAKING_CHANGE_DESCRIPTIONS[type] : await promptBreakingMessage(type, group.length);
+      await commitBreakingChange(commitScope, group, message, breakingDesc);
+    }
+  }
   
   if (normalCommitTypes.length === 0 && breakingCommitTypes.length === 0) {
     console.log(chalk.yellow('Nenhum tipo de alteração identificado para commit.'));

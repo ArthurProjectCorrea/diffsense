@@ -17,14 +17,15 @@
     "check-types": "node scripts/animated-check-types.js",
     "clean": "pnpm dlx rimraf node_modules dist pnpm-lock.yaml",
     "lint": "node scripts/animated-lint.js",
-    "lint:fix": "pnpm exec eslint . --ext .ts --fix",
-
+  "lint:fix": "pnpm exec eslint . --ext .ts --fix",
   "diffsense:feat": "node bin/commit.js feat",
   "diffsense:fix": "node bin/commit.js fix",
   "diffsense:docs": "node bin/commit.js docs",
   "diffsense:refactor": "node bin/commit.js refactor",
   "diffsense:test": "node bin/commit.js test",
-  "diffsense:chore": "node bin/commit.js chore"
+  "diffsense:chore": "node bin/commit.js chore",
+  "show-scopes": "node scripts/show-scopes.js",
+  "show-scoped-files": "node scripts/show-scoped-files.js"
 
   },
   "files": [
@@ -77,7 +78,8 @@
     "ora": "^8.2.0",
     "simple-git": "^3.21.0",
     "ts-morph": "^21.0.1",
-    "yaml": "^2.3.4"
+  "yaml": "^2.3.4",
+  "ignore": "^5.2.0"
   },
   "engines": {
     "node": ">=18.0.0"

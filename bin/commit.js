@@ -30,6 +30,8 @@ const program = new Command();
 
 // Importando biblioteca para tabelas de linha de comando
 import Table from 'cli-table3';
+import { findPackageScopes } from '../src/utils/scope-finder.js';
+import { classifyFilesByScope } from '../src/utils/scope-classifier.js';
 
 // Função para gerar o texto de ajuda personalizado com estilo tabular mais compacto
 function generateCustomHelp() {
@@ -60,8 +62,9 @@ function generateCustomHelp() {
   // Adicionar opções na tabela
   optionsTable.push(
     [chalk.green('-a, --analyzer'), 'Executa apenas a análise e exibe o resultado, sem realizar commits'],
-    [chalk.green('-ac, --autoComplete'), 'Realiza commits automáticos com descrições predefinidas baseadas na análise (inclui tratamento automático para breaking changes)'],
-    [chalk.green('-t, --types'), 'Lista todos os tipos de commit suportados com descrições e exemplos'],
+    [chalk.green('-ac, --autoComplete'), 'Realiza commits automáticos com descrições predefinidas'],
+    [chalk.green('-t, --types'), 'Lista todos os tipos de commit suportados'],
+    [chalk.green('-s, --scopes'), 'Lista todos os escopos (package.json) encontrados'],
     [chalk.green('-v, --version'), 'Exibe a versão atual da ferramenta'],
     [chalk.green('-h, --help'), 'Exibe este guia de ajuda']
   );
@@ -83,7 +86,8 @@ function generateCustomHelp() {
     [chalk.yellow('$ diffsense'), 'Fluxo padrão interativo de commit'],
     [chalk.yellow('$ diffsense --analyzer'), 'Apenas analisar alterações sem fazer commit'],
     [chalk.yellow('$ diffsense --autoComplete'), 'Realizar commits automáticos com descrições geradas (incluindo breaking changes)'],
-    [chalk.yellow('$ diffsense --types'), 'Listar todos os tipos de commit suportados']
+    [chalk.yellow('$ diffsense --types'), 'Listar todos os tipos de commit suportados'],
+    [chalk.yellow('$ diffsense --scopes'), 'Listar todos os escopos (package.json) encontrados']
   );
   
   output += examplesTable.toString() + '\n\n';
@@ -116,12 +120,42 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 }
 
 // Verificar se está solicitando a lista de tipos
+// Verificar se está solicitando a lista de tipos
 if (process.argv.includes('--types') || process.argv.includes('-t')) {
-  // Animação de carregamento dos tipos de commit
   const spinner = ora('Carregando tipos de commit...').start();
   spinner.succeed(chalk.green('Tipos de commit prontos!'));
   showCommitTypes();
   process.exit(0);
+}
+// Verificar se está solicitando a lista de escopos
+// Verificar se está solicitando a lista de escopos
+if (process.argv.includes('--scopes') || process.argv.includes('-s')) {
+  const spinnerScopes = ora('Carregando escopos do projeto...').start();
+  findPackageScopes(process.cwd())
+    .then(scopes => {
+      spinnerScopes.succeed(chalk.green('Escopos encontrados!'));
+      // Exibir banner de escopos
+      console.log(boxen(
+        chalk.cyan.bold('DiffSense - Escopos de Pacotes') + '\n' +
+        chalk.dim('Lista de pacotes (package.json) detectados no monorepo'),
+        { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'cyan' }
+      ));
+      // Criar tabela de escopos
+      const scopesTable = new Table({
+        head: [chalk.cyan('Escopo'), chalk.cyan('Diretório')],
+        style: { head: [], border: [] },
+        colWidths: [30, 60],
+        wordWrap: true
+      });
+      scopes.forEach(s => scopesTable.push([chalk.green(s.name), s.dir]));
+      console.log(scopesTable.toString());
+      process.exit(0);
+    })
+    .catch(err => {
+      spinnerScopes.fail(chalk.red('Erro ao carregar escopos'));
+      console.error(err);
+      process.exit(1);
+    });
 }
 
 // Configurar o programa para o fluxo normal
@@ -131,6 +165,7 @@ program
   .option('-a, --analyzer', 'Executa apenas a análise e exibe o resultado')
   .option('-ac, --autoComplete', 'Realiza commits automáticos com descrições predefinidas')
   .option('-t, --types', 'Lista todos os tipos de commit suportados com descrições e exemplos')
+  .option('-s, --scopes', 'Lista todos os escopos (package.json) encontrados no projeto')
   .version('1.0.0', '-v, --version', 'Exibe a versão atual da ferramenta')
   .helpOption('-h, --help', 'Exibe informações de ajuda sobre os comandos disponíveis')
   .addHelpCommand(false)
@@ -187,19 +222,61 @@ async function run() {
     }
     // Etapa 1: Adicionar arquivos ao stage
     await stageAllFiles();
-    // Etapa 2: Analisar alterações
-    const analysisResult = await analyzeChanges();
+  // Etapa 2: Analisar alterações
+  const analysisResult = await analyzeChanges();
     
-    // Etapa 3.1: Verificar se é apenas para análise
+  // Etapa 3.1: Verificar se é apenas para análise
     if (options.analyzer) {
-      // Banner indicando execução no modo análise
-      console.log(
-        boxen(
-          chalk.yellow('Modo Análise') + '\n' + chalk.dim('Nenhum commit foi realizado.'),
-          { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'yellow' }
-        )
-      );
+      // Agrupar arquivos por escopo
+      const scopes = await findPackageScopes(process.cwd());
+      const filePaths = analysisResult.files.map(f => f.filePath);
+      const grouped = classifyFilesByScope(filePaths, scopes);
+      for (const [scope, fps] of Object.entries(grouped)) {
+        if (fps.length === 0) continue;
+        console.log(chalk.bold(`\nEscopo: ${scope}`));
+        const table = new Table({
+          head: [chalk.cyan('Arquivo'), chalk.cyan('Tipo'), chalk.cyan('+/-'), chalk.cyan('Status')],
+          style: { head: [], border: [] },
+          wordWrap: true
+        });
+        fps.forEach(fp => {
+          const f = analysisResult.files.find(x => x.filePath === fp);
+          table.push([
+            fp,
+            f.primaryType || '',
+            `+${f.additions||0}/-${f.deletions||0}`,
+            f.status || ''
+          ]);
+        });
+        console.log(table.toString());
+      }
       return;
+    }
+    // Exibir agrupamento por escopos antes do commit
+    const allScopes = await findPackageScopes(process.cwd());
+    const allPaths = analysisResult.files.map(f => f.filePath);
+    const scopeGroups = classifyFilesByScope(allPaths, allScopes);
+    console.log(boxen(
+      chalk.cyan.bold('DiffSense - Resumo de Alterações por Escopo'),
+      { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'cyan' }
+    ));
+    for (const [scope, fps] of Object.entries(scopeGroups)) {
+      if (!fps.length) continue;
+      console.log(chalk.bold(`\nEscopo: ${scope}`));
+      const tbl = new Table({
+        head: [chalk.cyan('Arquivo'), chalk.cyan('Tipo'), chalk.cyan('+/-')],
+        style: { head: [], border: [] },
+        wordWrap: true
+      });
+      fps.forEach(fp => {
+        const file = analysisResult.files.find(x => x.filePath === fp);
+        tbl.push([
+          fp,
+          file.primaryType || '',
+          `+${file.additions || 0}/-${file.deletions || 0}`
+        ]);
+      });
+      console.log(tbl.toString());
     }
     
     // Etapa 3.2 e 4: Confirmar commit
