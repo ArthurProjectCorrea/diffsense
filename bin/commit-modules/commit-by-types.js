@@ -178,6 +178,8 @@ export async function commitByTypes(analysisResult, autoComplete) {
   // Mapear arquivos por escopo
   const filePaths = files.map(f => f.filePath);
   const scopeGroups = classifyFilesByScope(filePaths, scopes);
+  // Contador de commits realizados
+  let commitCount = 0;
   // Definir variáveis antigas para compatibilidade e evitar ReferenceError
   const normalCommitTypes = [];
   const breakingCommitTypes = [];
@@ -202,17 +204,19 @@ export async function commitByTypes(analysisResult, autoComplete) {
       const group = normalByType[type];
       if (group.length === 0) continue;
       const commitScope = `${type}(${scopeName})`;
-      let message = autoComplete ? AUTO_DESCRIPTIONS[type] : await promptCommitMessage(type, group.length);
-      await commitFiles(commitScope, group, message);
+      const message = autoComplete ? AUTO_DESCRIPTIONS[type] : await promptCommitMessage(type, group.length);
+      const ok = await commitFiles(commitScope, group, message);
+      if (ok) commitCount++;
     }
     // Realizar commits breaking
     for (const type of Object.keys(breakingByType)) {
       const group = breakingByType[type];
       if (group.length === 0) continue;
       const commitScope = `${type}!(${scopeName})`;
-      let message = autoComplete ? AUTO_DESCRIPTIONS[type] : await promptCommitMessage(type, group.length);
+      const message = autoComplete ? AUTO_DESCRIPTIONS[type] : await promptCommitMessage(type, group.length);
       const breakingDesc = autoComplete ? AUTO_BREAKING_CHANGE_DESCRIPTIONS[type] : await promptBreakingMessage(type, group.length);
-      await commitBreakingChange(commitScope, group, message, breakingDesc);
+      const ok = await commitBreakingChange(commitScope, group, message, breakingDesc);
+      if (ok) commitCount++;
     }
   }
   
