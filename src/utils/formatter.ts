@@ -1,7 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import chalk from 'chalk';
 import boxen from 'boxen';
-// Declaração para módulo sem tipos
-declare module 'cli-table3';
 import Table from 'cli-table3';
 import { AnalysisResult, ChangeType, FileStatus } from '../types/index.js';
 import { getChangeTypeDescription } from '../index.js';
@@ -15,23 +14,30 @@ export class ResultFormatter {
    * @param result Resultado da análise
    */
   format(result: AnalysisResult): string {
-    const { files, summary, primaryType, baseBranch, headBranch, hasBreakingChanges, breakingChanges } = result;
-    let output = '';
-    
-    // Banner e referências
-    const header = boxen(
-      chalk.cyan.bold('DiffSense - Análise de Alterações'),
-      { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'cyan' }
-    );
-    output += header + '\n';
-    output += chalk.bold('Referências: ') +
-      chalk.yellow(baseBranch || 'HEAD^') + ' → ' +
-      chalk.yellow(headBranch || 'HEAD') + '\n\n';
+  const { files, summary, baseBranch, headBranch, hasBreakingChanges, breakingChanges } = result;
+        let output = '';
+        
+        // Banner principal
+        output += boxen(
+          chalk.cyan.bold('DiffSense: Análise de Alterações'),
+          { padding: 1, margin: 1, borderStyle: 'round', borderColor: 'cyan' }
+        ) + '\n';
+        
+  // Tabela de referências
+  const refsTable = new Table({
+          head: [chalk.bold('Referência'), chalk.bold('Branch')],
+          style: { head: [], border: [] },
+  });
+  refsTable.push(
+          ['Base', chalk.yellow(baseBranch || 'HEAD^')],
+          ['Head', chalk.yellow(headBranch || 'HEAD')]
+        );
+        output += refsTable.toString() + '\n\n';
     
     // Resumo
     output += chalk.bold('Resumo:\n');
     if (Object.keys(summary).length > 0) {
-      const summaryTable = new Table({
+  const summaryTable = new Table({
         head: [
           chalk.cyan('Tipo'), 
           chalk.cyan('Descrição'),
@@ -57,26 +63,21 @@ export class ResultFormatter {
         ]);
       }
       
-      output += summaryTable.toString() + '\n\n';
+  output += (summaryTable as any).toString() + '\n\n';
     } else {
       output += 'Nenhuma alteração encontrada.\n\n';
     }
     
-    // Tipo primário
-    output += chalk.bold('Tipo Primário: ') + this.formatChangeType(primaryType) + 
-      ` (${getChangeTypeDescription(primaryType)})`;
-    
+    // [Removido] Linha de Tipo Primário, pois já listado na tabela
     // Destacar se há breaking changes
     if (hasBreakingChanges) {
-      output += chalk.bold.red(' ⚠️ CONTÉM BREAKING CHANGES!');
+      output += chalk.bold.red('⚠️ CONTÉM BREAKING CHANGES!') + '\n\n';
     }
-    
-    output += '\n\n';
     
     // Detalhes dos arquivos
     output += chalk.bold('Detalhes dos Arquivos:\n');
     if (files && files.length > 0) {
-      const filesTable = new Table({
+  const filesTable = new Table({
         head: [
           chalk.cyan('Arquivo'),
           chalk.cyan('Status'),
@@ -91,7 +92,7 @@ export class ResultFormatter {
         colWidths: [35, 8, 8, 8, 18, 13],
       });
       
-      for (const file of files) {
+  for (const file of files) {
         // Ajustando o tamanho do nome do arquivo para caber melhor na coluna
         let filePath = file.filePath;
         if (filePath.length > 38) {
@@ -101,7 +102,7 @@ export class ResultFormatter {
           }
         }
 
-        filesTable.push([
+  filesTable.push([
           filePath,
           file.status ? this.formatFileStatus(file.status) : '?',
           `+${file.additions || 0}/-${file.deletions || 0}`,
@@ -111,7 +112,7 @@ export class ResultFormatter {
         ]);
       }
       
-      output += filesTable.toString() + '\n';
+  output += (filesTable as any).toString() + '\n';
     } else {
       output += 'Nenhum arquivo modificado.\n';
     }
@@ -119,7 +120,7 @@ export class ResultFormatter {
     // Seção especial para breaking changes
     if (hasBreakingChanges && breakingChanges && breakingChanges.length > 0) {
       output += '\n' + chalk.bold.red('⚠️ Breaking Changes Detectados:\n');
-      const breakingTable = new Table({
+  const breakingTable = new Table({
         head: [
           chalk.red('Arquivo'),
           chalk.red('Razão')
@@ -130,14 +131,14 @@ export class ResultFormatter {
         colWidths: [40, 50],
       });
       
-      for (const file of breakingChanges) {
-        breakingTable.push([
+  for (const file of breakingChanges) {
+  breakingTable.push([
           file.filePath,
           file.breakingChangeReason || 'Alteração incompatível detectada'
         ]);
       }
       
-      output += breakingTable.toString() + '\n';
+  output += (breakingTable as any).toString() + '\n';
       
       output += chalk.yellow('\nObservação: Breaking changes precisam ser indicados no commit com "!" após o tipo.\n');
       output += chalk.yellow('Exemplo: feat!: nova API incompatível com versão anterior\n');
